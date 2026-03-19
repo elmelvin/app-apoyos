@@ -1,0 +1,93 @@
+.register-content{
+  --background: linear-gradient(
+    135deg,
+    #eef1f5,
+    #eef1f5
+  );
+}
+
+.register-container{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100%;
+}
+
+.register-card{
+
+  width:92%;
+  max-width:420px;
+
+  background:white;
+
+  padding:30px;
+  border-radius:18px;
+
+  box-shadow:0 20px 45px rgba(0,0,0,0.25);
+
+  animation:fadeScale .6s ease;
+}
+
+.register-header{
+  text-align:center;
+  margin-bottom:25px;
+}
+
+.register-logo{
+  width:90px;
+  margin-bottom:10px;
+}
+
+.register-title{
+  font-size:24px;
+  font-weight:700;
+  margin:0;
+}
+
+.register-subtitle{
+  color:#6b7280;
+  font-size:14px;
+}
+
+.input-item{
+
+  margin-bottom:14px;
+
+  border-radius:12px;
+  border:1px solid #e5e7eb;
+
+  --padding-start:10px;
+}
+
+.register-button{
+  margin-top:18px;
+
+  height:46px;
+
+  font-weight:600;
+
+  --border-radius:12px;
+}
+
+.login-link{
+  margin-top:8px;
+}
+
+.error-text{
+  text-align:center;
+  margin-top:8px;
+}
+
+@keyframes fadeScale{
+
+  from{
+    opacity:0;
+    transform:scale(.9);
+  }
+
+  to{
+    opacity:1;
+    transform:scale(1);
+  }
+
+}

@@ -1,0 +1,50 @@
+.home-bg{
+  --background: linear-gradient(180deg,#eef2f7,#ffffff);
+}
+
+/* PERFIL */
+
+.perfil-box{
+  text-align:center;
+  padding:30px;
+}
+
+.perfil-icon{
+  font-size:80px;
+  color:#2c7be5;
+}
+
+/* TARJETAS */
+
+.card-pro{
+  border-radius:18px;
+  box-shadow:0 10px 25px rgba(0,0,0,0.08);
+  transition:0.3s;
+}
+
+.card-pro:hover{
+  transform:translateY(-5px);
+}
+
+/* COLORES */
+
+.apoyo{
+  border-left:6px solid #2c7be5;
+}
+
+.solicitudes{
+  border-left:6px solid #00a86b;
+}
+
+.salir{
+  border-left:6px solid #dc3545;
+}
+
+/* TITULOS */
+
+ion-card-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:600;
+}
