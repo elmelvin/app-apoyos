@@ -15,6 +15,9 @@ import HomeUsuario from "./HomeUsuario";
 import PerfilUsuario from "./Perfil";
 import ListaApoyos from "./ListaApoyos";
 import FormularioSolicitud from "./FormularioSolicitud";
+import MisSolicitudes from "./MisSolicitudes";
+import CentroAyuda from "./CentroAyuda";
+import AvisoPrivacidad from "./AvisoPrivacidad";
 
 const TabsUsuario: React.FC = () => {
   return (
@@ -28,6 +31,9 @@ const TabsUsuario: React.FC = () => {
 
         {/* NUEVA RUTA */}
         <Route path="/usuario/apoyos" component={ListaApoyos} exact />
+        <Route path="/usuario/solicitudes" component={MisSolicitudes} exact />
+        <Route path="/usuario/ayuda" component={CentroAyuda} exact />
+        <Route path="/usuario/privacidad" component={AvisoPrivacidad} exact />
 
         <Redirect exact from="/usuario" to="/usuario/home" />
 

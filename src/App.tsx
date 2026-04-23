@@ -4,8 +4,9 @@ import { Route, Redirect } from "react-router-dom";
 
 import Login from "./pages/Login";
 import DashboardAdmin from "./pages/Admin/DashboardAdmin";
+import AdminSolicitudes from "./pages/Admin/AdminSolicitudes";
+import AdminApoyos from "./pages/Admin/AdminApoyos";
 import TabsUsuario from "./pages/Usuario/TabsUsuario";
-import ListaApoyos from "./pages/Usuario/ListaApoyos";
 import Register from "./pages/Registro/Register";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -36,32 +37,52 @@ const App: React.FC = () => {
 
         <IonRouterOutlet>
 
-          {/* LOGIN */}
+       {/* ========================= */}
+          {/* LOGIN Y REGISTRO */}
+          {/* ========================= */}
+
           <Route path="/login" component={Login} exact />
+
           <Route path="/register" component={Register} exact />
 
+          {/* ========================= */}
           {/* USUARIO */}
+          {/* ========================= */}
+
           <ProtectedRoute
             path="/usuario"
             component={TabsUsuario}
             role="usuario"
           />
 
-          <ProtectedRoute
-            path="/usuario/apoyos"
-            component={ListaApoyos}
-            role="usuario"
-          />
-
+          {/* ========================= */}
           {/* ADMIN */}
+          {/* ========================= */}
+
           <ProtectedRoute
             path="/admin/dashboard"
             component={DashboardAdmin}
             role="admin"
           />
 
+          <ProtectedRoute
+            path="/admin/solicitudes"
+            component={AdminSolicitudes}
+            role="admin"
+          />
+
+          <ProtectedRoute
+            path="/admin/apoyos"
+            component={AdminApoyos}
+            role="admin"
+          />
+
+          {/* ========================= */}
           {/* REDIRECCION */}
+          {/* ========================= */}
+
           <Redirect exact from="/" to="/login" />
+
 
         </IonRouterOutlet>
 

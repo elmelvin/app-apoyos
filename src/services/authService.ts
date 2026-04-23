@@ -42,8 +42,8 @@ export const getProfile = async (userId: string) => {
   const { data, error } = await supabase
     .from("perfiles")
     .select("*")
-    .eq("user_id", userId) // ✅ CORRECTO
-    .maybeSingle();        // ✅ EVITA ERROR JSON
+    .eq("user_id", userId) 
+    .maybeSingle();        
 
   if (error) throw error;
 

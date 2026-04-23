@@ -1,0 +1,47 @@
+.recent-card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.recent-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.recent-row:hover {
+  background: #f7f7f7;
+}
+
+.estado {
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e9f7ef;
+  color: #1f6f46;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ver-todas {
+  margin-top: 10px;
+  padding: 10px;
+  background: #2f855a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .recent-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -1,357 +1,376 @@
 import {
-IonPage,
-IonContent,
-IonHeader,
-IonToolbar,
-IonTitle,
-IonGrid,
-IonRow,
-IonCol,
-IonCard,
-IonCardHeader,
-IonCardTitle,
-IonCardContent,
-IonIcon,
-IonButton,
-IonItem,
-IonLabel,
-IonSelect,
-IonSelectOption
+  IonButton,
+  IonCard,
+  IonCardContent,
+  IonCardHeader,
+  IonCardTitle,
+  IonContent,
+  IonHeader,
+  IonIcon,
+  IonItem,
+  IonLabel,
+  IonPage,
+  IonSelect,
+  IonSelectOption,
+  IonTitle,
+  IonToolbar,
+  useIonViewWillEnter,
 } from "@ionic/react";
-
-import {
-personCircle,
-documentText,
-helpCircle
-} from "ionicons/icons";
-
-import { useHistory } from "react-router-dom";
+import { documentText, helpCircle, personCircle } from "ionicons/icons";
 import { useEffect, useState } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import { supabase } from "../../services/supabaseClient";
-
 import "./HomeUsuario.css";
 
 interface Municipio {
-id: string;
-nombre: string;
+  id: string;
+  nombre: string;
 }
 
 interface Comunidad {
-id: string;
-nombre: string;
-municipio_id: string;
-tipo: string;
-}
-
-interface Perfil {
-user_id: string;
-municipio_id: string;
-comunidad_id: string;
+  id: string;
+  nombre: string;
+  municipio_id: string;
+  tipo: string;
 }
 
 const HomeUsuario: React.FC = () => {
+  const history = useHistory();
+  const location = useLocation<{ editarUbicacion?: boolean }>();
 
-const history = useHistory();
+  const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [tipos, setTipos] = useState<string[]>([]);
+  const [comunidades, setComunidades] = useState<Comunidad[]>([]);
 
-const [usuario,setUsuario] = useState<any>(null);
+  const [municipioId, setMunicipioId] = useState<string>("");
+  const [tipo, setTipo] = useState<string>("");
+  const [comunidadId, setComunidadId] = useState<string>("");
 
-const [municipios,setMunicipios] = useState<Municipio[]>([]);
-const [tipos,setTipos] = useState<string[]>([]);
-const [comunidades,setComunidades] = useState<Comunidad[]>([]);
+  const [perfilCompleto, setPerfilCompleto] = useState<boolean>(false);
+  const [cargandoUbicacion, setCargandoUbicacion] = useState<boolean>(true);
 
-const [municipioId,setMunicipioId] = useState<string>("");
-const [tipo,setTipo] = useState<string>("");
-const [comunidadId,setComunidadId] = useState<string>("");
+  const modoEdicion = location.state?.editarUbicacion === true;
 
-const [perfilCompleto,setPerfilCompleto] = useState<boolean>(false);
+  useEffect(() => {
+    iniciar();
+    // iniciar solo se necesita al montar la vista
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-useEffect(()=>{
-iniciar();
-},[]);
+  useIonViewWillEnter(() => {
+    iniciar();
+  });
 
-const iniciar = async () => {
+  const iniciar = async () => {
+    setCargandoUbicacion(true);
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-const { data:{ user } } = await supabase.auth.getUser();
+    if (!user) {
+      setCargandoUbicacion(false);
+      return;
+    }
 
-if(!user) return;
+    await Promise.all([cargarMunicipios(), verificarPerfil(user.id)]);
+  };
 
-setUsuario(user);
+  const verificarPerfil = async (userId: string) => {
+    const { data } = await supabase
+      .from("perfiles")
+      .select("*")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-verificarPerfil(user.id);
+    if (data) {
+      setMunicipioId(data.municipio_id || "");
+      setComunidadId(data.comunidad_id || "");
 
-cargarMunicipios();
+      if (data.municipio_id) {
+        await cargarTipos(data.municipio_id);
+      }
 
+      if (data.comunidad_id) {
+        const { data: comunidadActual } = await supabase
+          .from("comunidades")
+          .select("tipo")
+          .eq("id", data.comunidad_id)
+          .maybeSingle();
 
-};
+        if (comunidadActual?.tipo) {
+          setTipo(comunidadActual.tipo);
 
-const verificarPerfil = async (userId:string) => {
+          if (data.municipio_id) {
+            await cargarComunidades(data.municipio_id, comunidadActual.tipo);
+          }
+        }
+      }
 
+      if (data.municipio_id && data.comunidad_id) {
+        setPerfilCompleto(true);
+      }
+    }
 
-const { data, error } = await supabase
-.from("perfiles")
-.select("*")
-.eq("user_id", userId)
-.maybeSingle();
+    setCargandoUbicacion(false);
+  };
 
-if(data){
-  setMunicipioId(data.municipio_id || "");
-  setComunidadId(data.comunidad_id || "");
+  const cargarMunicipios = async () => {
+    const { data, error } = await supabase.from("municipios").select("*");
 
-  if(data.municipio_id && data.comunidad_id){
+    if (error) {
+      console.log(error);
+      return;
+    }
+
+    setMunicipios(data as Municipio[]);
+  };
+
+  const cargarTipos = async (municipio_id: string) => {
+    const { data } = await supabase
+      .from("comunidades")
+      .select("tipo")
+      .eq("municipio_id", municipio_id);
+
+    const tiposUnicos = [...new Set(data?.map((c: { tipo: string }) => c.tipo))];
+    setTipos(tiposUnicos as string[]);
+  };
+
+  const cargarComunidades = async (municipio_id: string, tipoSeleccionado: string) => {
+    const { data } = await supabase
+      .from("comunidades")
+      .select("*")
+      .eq("municipio_id", municipio_id)
+      .eq("tipo", tipoSeleccionado);
+
+    setComunidades(data as Comunidad[]);
+  };
+
+  const guardarPerfil = async () => {
+    if (!municipioId || !comunidadId) {
+      alert("Selecciona municipio y comunidad");
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      alert("Usuario no autenticado");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("perfiles")
+      .update({
+        municipio_id: municipioId,
+        comunidad_id: comunidadId,
+      })
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.log(error);
+      alert("Error guardando perfil");
+      return;
+    }
+
     setPerfilCompleto(true);
-  }
-}
+    alert("Perfil guardado correctamente");
 
-};
+    if (modoEdicion) {
+      history.replace("/usuario/perfil");
+    }
+  };
 
-const cargarMunicipios = async () => {
+  return (
+    <IonPage>
+      <IonHeader>
+        <IonToolbar color="primary">
+          <IonTitle>Portal de Apoyos</IonTitle>
+        </IonToolbar>
+      </IonHeader>
 
+      <IonContent fullscreen className="home-bg">
+        <div className="home-layout">
+          <section className="home-hero">
+            <div className="home-hero__icon">
+              <IonIcon icon={personCircle} />
+            </div>
 
-const { data,error } = await supabase
-  .from("municipios")
-  .select("*");
+            <div className="home-hero__content">
+              <p className="home-hero__eyebrow">Portal ciudadano</p>
+              <h1>Bienvenido</h1>
+              <p className="home-hero__text">
+                Gestiona tus apoyos y consulta tus solicitudes
+              </p>
 
-if(error){
-  console.log(error);
-  return;
-}
+              <div className="home-hero__chips">
+                <span>{perfilCompleto ? "Perfil listo" : "Falta completar perfil"}</span>
+                <span>{modoEdicion ? "Editando ubicación" : "Accesos rápidos"}</span>
+              </div>
+            </div>
+          </section>
 
-setMunicipios(data as Municipio[]);
+          {(!perfilCompleto || modoEdicion) && !cargandoUbicacion && (
+            <IonCard className="home-card home-card--location">
+              <IonCardHeader>
+                <p className="home-card__eyebrow">Ubicación</p>
+                <IonCardTitle>
+                  {modoEdicion ? "Edita tu ubicacion" : "Selecciona tu ubicacion"}
+                </IonCardTitle>
+              </IonCardHeader>
 
+              <IonCardContent>
+                <p className="home-location__hint">
+                  Esta información nos ayuda a mostrarte apoyos y seguimiento según tu
+                  comunidad.
+                </p>
 
-};
+                <div className="home-location__fields">
+                  <IonItem className="home-select-item">
+                    <IonLabel>Municipio</IonLabel>
+                    <IonSelect
+                      placeholder="Selecciona municipio"
+                      value={municipioId}
+                      onIonChange={(e) => {
+                        const id = e.detail.value;
+                        setMunicipioId(id);
+                        setTipo("");
+                        setComunidadId("");
+                        setComunidades([]);
+                        cargarTipos(id);
+                      }}
+                    >
+                      {municipios.map((municipio) => (
+                        <IonSelectOption key={municipio.id} value={municipio.id}>
+                          {municipio.nombre}
+                        </IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
 
-const cargarTipos = async (municipio_id:string) => {
+                  {tipos.length > 0 && (
+                    <IonItem className="home-select-item">
+                      <IonLabel>Tipo de localidad</IonLabel>
+                      <IonSelect
+                        placeholder="Selecciona tipo"
+                        value={tipo}
+                        onIonChange={(e) => {
+                          const tipoSeleccionado = e.detail.value;
+                          setTipo(tipoSeleccionado);
+                          setComunidadId("");
+                          cargarComunidades(municipioId, tipoSeleccionado);
+                        }}
+                      >
+                        {tipos.map((tipoItem) => (
+                          <IonSelectOption key={tipoItem} value={tipoItem}>
+                            {tipoItem}
+                          </IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    </IonItem>
+                  )}
 
+                  {comunidades.length > 0 && (
+                    <IonItem className="home-select-item">
+                      <IonLabel>Comunidad</IonLabel>
+                      <IonSelect
+                        placeholder="Selecciona comunidad"
+                        value={comunidadId}
+                        onIonChange={(e) => setComunidadId(e.detail.value)}
+                      >
+                        {comunidades.map((comunidad) => (
+                          <IonSelectOption key={comunidad.id} value={comunidad.id}>
+                            {comunidad.nombre}
+                          </IonSelectOption>
+                        ))}
+                      </IonSelect>
+                    </IonItem>
+                  )}
+                </div>
 
-const { data } = await supabase
-  .from("comunidades")
-  .select("tipo")
-  .eq("municipio_id", municipio_id);
+                <div className="home-location__actions">
+                  <IonButton expand="block" onClick={guardarPerfil}>
+                    {modoEdicion ? "Actualizar ubicacion" : "Guardar ubicacion"}
+                  </IonButton>
 
-const tiposUnicos = [...new Set(data?.map((c:any)=>c.tipo))];
-
-setTipos(tiposUnicos as string[]);
-
-
-};
-
-const cargarComunidades = async (municipio_id:string,tipo:string) => {
-
-
-const { data } = await supabase
-  .from("comunidades")
-  .select("*")
-  .eq("municipio_id", municipio_id)
-  .eq("tipo", tipo);
-
-setComunidades(data as Comunidad[]);
-
-
-};
-
-const guardarPerfil = async () => {
-
-  if(!municipioId || !comunidadId){
-    alert("Debes seleccionar municipio y comunidad");
-    return;
-  }
-
-  const { error } = await supabase
-    .from("perfiles")
-    .update({
-      municipio_id: municipioId,
-      comunidad_id: comunidadId
-    })
-    .eq("user_id", usuario.id); // 🔥 CLAVE
-
-  if(error){
-    console.log(error);
-    alert("Error guardando perfil");
-    return;
-  }
-
-  setPerfilCompleto(true);
-};
-
-return (
-   <IonPage>
-  <IonHeader>
-    <IonToolbar color="primary">
-      <IonTitle>Portal de Apoyos</IonTitle>
-    </IonToolbar>
-  </IonHeader>
-
-  <IonContent fullscreen className="home-bg">
-
-    <div className="perfil-box">
-      <IonIcon icon={personCircle} className="perfil-icon"/>
-      <h2>Bienvenido</h2>
-      <p>Solicita y consulta tus apoyos</p>
-    </div>
-
-    {!perfilCompleto && (
-
-      <IonCard>
-
-        <IonCardHeader>
-          <IonCardTitle>Selecciona tu ubicación</IonCardTitle>
-        </IonCardHeader>
-
-        <IonCardContent>
-
-          <IonItem>
-            <IonLabel>Municipio</IonLabel>
-
-            <IonSelect
-              placeholder="Selecciona municipio"
-              value={municipioId}
-              onIonChange={(e)=>{
-                const id = e.detail.value;
-                setMunicipioId(id);
-                setTipo("");
-                setComunidadId("");
-                cargarTipos(id);
-              }}
-            >
-
-              {municipios.map((m)=>(
-                <IonSelectOption key={m.id} value={m.id}>
-                  {m.nombre}
-                </IonSelectOption>
-              ))}
-
-            </IonSelect>
-
-          </IonItem>
-
-          {tipos.length > 0 && (
-
-          <IonItem>
-
-            <IonLabel>Tipo de localidad</IonLabel>
-
-            <IonSelect
-              placeholder="Selecciona tipo"
-              value={tipo}
-              onIonChange={(e)=>{
-                const tipoSeleccionado = e.detail.value;
-                setTipo(tipoSeleccionado);
-                setComunidadId("");
-                cargarComunidades(municipioId,tipoSeleccionado);
-              }}
-            >
-
-              {tipos.map((t)=>(
-                <IonSelectOption key={t} value={t}>
-                  {t}
-                </IonSelectOption>
-              ))}
-
-            </IonSelect>
-
-          </IonItem>
-
+                  {modoEdicion && (
+                    <IonButton
+                      expand="block"
+                      fill="clear"
+                      onClick={() => history.replace("/usuario/perfil")}
+                    >
+                      Cancelar
+                    </IonButton>
+                  )}
+                </div>
+              </IonCardContent>
+            </IonCard>
           )}
 
-          {comunidades.length > 0 && (
+          {perfilCompleto && !modoEdicion && (
+            <section className="home-actions">
+              <IonCard className="home-card home-card--primary">
+                <IonCardHeader>
+                  <p className="home-card__eyebrow">Acceso principal</p>
+                  <IonCardTitle>
+                    <IonIcon icon={documentText} /> Lista de apoyos
+                  </IonCardTitle>
+                </IonCardHeader>
 
-          <IonItem>
+                <IonCardContent>
+                  <p className="home-card__text">
+                    Revisa los apoyos disponibles y comienza una nueva solicitud
+                    cuando lo necesites.
+                  </p>
 
-            <IonLabel>Comunidad</IonLabel>
+                  <div className="home-card__actions">
+                    <IonButton
+                      expand="block"
+                      routerLink="/usuario/apoyos"
+                      routerDirection="forward"
+                    >
+                      Solicitar apoyo
+                    </IonButton>
+                  </div>
+                </IonCardContent>
+              </IonCard>
 
-            <IonSelect
-              placeholder="Selecciona comunidad"
-              value={comunidadId}
-              onIonChange={(e)=>setComunidadId(e.detail.value)}
-            >
+              <IonCard className="home-card home-card--secondary">
+                <IonCardHeader>
+                  <p className="home-card__eyebrow">Seguimiento</p>
+                  <IonCardTitle>
+                    <IonIcon icon={helpCircle} /> Mis solicitudes
+                  </IonCardTitle>
+                </IonCardHeader>
 
-              {comunidades.map((c)=>(
-                <IonSelectOption key={c.id} value={c.id}>
-                  {c.nombre}
-                </IonSelectOption>
-              ))}
+                <IonCardContent>
+                  <p className="home-card__text">
+                    Consulta el estado de tus solicitudes y mantente al tanto de las
+                    actualizaciones.
+                  </p>
 
-            </IonSelect>
-
-          </IonItem>
-
+                  <div className="home-card__actions">
+                    <IonButton
+                      expand="block"
+                      fill="outline"
+                      routerLink="/usuario/solicitudes"
+                      routerDirection="forward"
+                    >
+                      Ver mis solicitudes
+                    </IonButton>
+                  </div>
+                </IonCardContent>
+              </IonCard>
+            </section>
           )}
-
-          <IonButton expand="block" onClick={guardarPerfil}>
-            Guardar ubicación
-          </IonButton>
-
-        </IonCardContent>
-
-      </IonCard>
-
-    )}
-
-    {perfilCompleto && (
-
-    <IonGrid>
-      <IonRow>
-
-        <IonCol size="12">
-          <IonCard className="card-pro apoyo">
-
-            <IonCardHeader>
-              <IonCardTitle>
-                <IonIcon icon={documentText}/> Lista de apoyos
-              </IonCardTitle>
-            </IonCardHeader>
-
-            <IonCardContent>
-              Realiza una nueva solicitud de apoyo social.
-
-              <IonButton
-                expand="block"
-                onClick={() => history.push("/usuario/apoyos")}
-              >
-                SOLICITAR
-              </IonButton>
-
-            </IonCardContent>
-
-          </IonCard>
-        </IonCol>
-
-        <IonCol size="12">
-          <IonCard className="card-pro solicitudes">
-
-            <IonCardHeader>
-              <IonCardTitle>
-                <IonIcon icon={helpCircle}/> Mis Solicitudes
-              </IonCardTitle>
-            </IonCardHeader>
-
-            <IonCardContent>
-              Consulta el estado de tus solicitudes.
-
-              <IonButton
-                expand="block"
-                onClick={() => history.push("/usuario/mis-solicitudes")}
-              >
-                Ver solicitudes
-              </IonButton>
-
-            </IonCardContent>
-
-          </IonCard>
-        </IonCol>
-
-      </IonRow>
-    </IonGrid>
-
-    )}
-
-  </IonContent>
-</IonPage>
-
-
-);
+        </div>
+      </IonContent>
+    </IonPage>
+  );
 };
 
 export default HomeUsuario;

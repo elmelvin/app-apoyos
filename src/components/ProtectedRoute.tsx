@@ -1,6 +1,8 @@
+import { IonContent, IonPage } from "@ionic/react";
 import { Redirect, Route } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
 import { useEffect, useState } from "react";
+import Loader from "./utilidades/Loader";
 
 interface Props {
   component: any;
@@ -32,8 +34,8 @@ const ProtectedRoute: React.FC<Props> = ({
       const { data: profile, error } = await supabase
       .from("perfiles")
       .select("rol")
-      .eq("user_id", data.user.id) // ✅ CORRECTO
-      .maybeSingle();              // ✅ EVITA ERROR
+      .eq("user_id", data.user.id) 
+      .maybeSingle();              
 
       if (error) {
         console.log(error);
@@ -51,7 +53,15 @@ const ProtectedRoute: React.FC<Props> = ({
     checkUser();
   }, [role]);
 
-  if (authorized === null) return null;
+  if (authorized === null) {
+    return (
+      <IonPage>
+        <IonContent className="ion-padding">
+          <Loader message="Validando acceso..." />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return authorized ? (
     <Route {...rest} render={(props) => <Component {...props} />} />
