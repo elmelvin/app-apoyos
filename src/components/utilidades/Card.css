@@ -1,0 +1,21 @@
+.app-card {
+  min-width: 0;
+  margin-bottom: 15px;
+  padding: 18px;
+  border: 1px solid #dfe8e2;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(18, 53, 36, 0.07);
+}
+
+.app-card h2,
+.app-card h3,
+.app-card h4 {
+  color: #123524;
+}
+
+@media (max-width: 640px) {
+  .app-card {
+    padding: 16px;
+  }
+}

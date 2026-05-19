@@ -1,37 +1,27 @@
 import {
+  IonAlert,
   IonBadge,
   IonButton,
   IonContent,
-  IonHeader,
   IonIcon,
-  IonItem,
-  IonLabel,
   IonPage,
-  IonSelect,
-  IonSelectOption,
-  IonTextarea,
   IonToggle,
-  IonTitle,
-  IonToolbar,
   useIonViewWillEnter,
 } from "@ionic/react";
-import { createOutline, trashOutline } from "ionicons/icons";
+import { addCircleOutline, createOutline, trashOutline } from "ionicons/icons";
 import { useEffect, useMemo, useState } from "react";
+import { useHistory, useLocation } from "react-router-dom";
 import AdminHeader from "../../components/admin/AdminHeader";
 import Card from "../../components/utilidades/Card";
 import EmptyState from "../../components/utilidades/EmptyState";
+import AppFeedback, { AppFeedbackState } from "../../components/utilidades/AppFeedback";
 import Loader from "../../components/utilidades/Loader";
 import StatCard from "../../components/utilidades/StatCard";
-import InputField from "../../components/form/InputField";
 import {
   Apoyo,
-  actualizarApoyo,
   cambiarEstadoApoyo,
-  crearApoyo,
   eliminarApoyo,
   getAdminApoyos,
-  getMunicipios,
-  MunicipioOption,
 } from "../../services/apoyosService";
 import "./AdminApoyos.css";
 
@@ -39,51 +29,25 @@ type AdminApoyo = Apoyo & {
   municipio_nombre?: string | null;
 };
 
-type FormState = {
-  nombre: string;
-  descripcion: string;
-  requisitos: string;
-  municipio_id: string;
-};
-
-const initialForm: FormState = {
-  nombre: "",
-  descripcion: "",
-  requisitos: "",
-  municipio_id: "",
-};
-
 const AdminApoyos = () => {
+  const history = useHistory();
+  const location = useLocation<{ feedback?: string } | undefined>();
   const [apoyos, setApoyos] = useState<AdminApoyo[]>([]);
-  const [municipios, setMunicipios] = useState<MunicipioOption[]>([]);
-  const [form, setForm] = useState<FormState>(initialForm);
-  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [feedback, setFeedback] = useState("");
-
-  const errores = useMemo(() => {
-    const next: Record<string, string> = {};
-
-    if (!form.nombre.trim()) {
-      next.nombre = "Escribe el nombre del apoyo.";
-    }
-
-    if (!form.descripcion.trim()) {
-      next.descripcion = "Agrega una descripcion breve.";
-    }
-
-    if (!form.requisitos.trim()) {
-      next.requisitos = "Enumera los documentos o requisitos.";
-    }
-
-    return next;
-  }, [form.descripcion, form.nombre, form.requisitos]);
-
-  const formValido = Object.keys(errores).length === 0;
+  const [feedback, setFeedback] = useState(location.state?.feedback || "");
+  const [toastFeedback, setToastFeedback] = useState<AppFeedbackState | null>(
+    location.state?.feedback
+      ? {
+          type: "success",
+          title: "Catalogo actualizado",
+          message: location.state.feedback,
+        }
+      : null
+  );
+  const [apoyoAEliminar, setApoyoAEliminar] = useState<AdminApoyo | null>(null);
 
   const resumen = useMemo(() => {
     const total = apoyos.length;
@@ -99,13 +63,9 @@ const AdminApoyos = () => {
       setLoading(true);
       setError("");
 
-      const [apoyosData, municipiosData] = await Promise.all([
-        getAdminApoyos(),
-        getMunicipios(),
-      ]);
+      const apoyosData = await getAdminApoyos();
 
       setApoyos(apoyosData);
-      setMunicipios(municipiosData);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "No se pudieron cargar los apoyos.";
@@ -124,92 +84,36 @@ const AdminApoyos = () => {
     cargarDatos();
   });
 
-  const handleChange = <K extends keyof FormState>(campo: K, valor: FormState[K]) => {
-    setForm((actual) => ({ ...actual, [campo]: valor }));
-  };
-
-  const guardarApoyo = async () => {
-    setFeedback("");
-    setError("");
-
-    if (!formValido) {
-      setError("Completa nombre, descripcion y requisitos antes de guardar.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      const payload = {
-        nombre: form.nombre.trim(),
-        descripcion: form.descripcion.trim(),
-        requisitos: form.requisitos.trim(),
-        municipio_id: form.municipio_id || null,
-      };
-
-      if (editingId) {
-        await actualizarApoyo(editingId, payload);
-      } else {
-        await crearApoyo(payload);
-      }
-
-      setForm(initialForm);
-      setEditingId(null);
-      setFeedback(
-        editingId ? "Apoyo actualizado correctamente." : "Apoyo guardado correctamente."
-      );
-      await cargarDatos();
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "No se pudo guardar el apoyo.";
-      setError(message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const editarApoyo = (apoyo: AdminApoyo) => {
-    setFeedback("");
-    setError("");
-    setEditingId(apoyo.id);
-    setForm({
-      nombre: apoyo.nombre || "",
-      descripcion: apoyo.descripcion || "",
-      requisitos: apoyo.requisitos || "",
-      municipio_id: apoyo.municipio_id || "",
-    });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const cancelarEdicion = () => {
-    setEditingId(null);
-    setForm(initialForm);
-    setFeedback("");
-    setError("");
-  };
-
   const borrarApoyo = async (apoyo: AdminApoyo) => {
-    const confirmado = window.confirm(
-      `Se eliminara el apoyo "${apoyo.nombre}". Esta accion no se puede deshacer.`
-    );
+    setApoyoAEliminar(apoyo);
+  };
 
-    if (!confirmado) return;
+  const confirmarEliminarApoyo = async () => {
+    if (!apoyoAEliminar) return;
 
     try {
-      setDeletingId(apoyo.id);
+      setDeletingId(apoyoAEliminar.id);
       setFeedback("");
       setError("");
-      await eliminarApoyo(apoyo.id);
+      await eliminarApoyo(apoyoAEliminar.id);
       setFeedback("Apoyo eliminado correctamente.");
-
-      if (editingId === apoyo.id) {
-        cancelarEdicion();
-      }
+      setToastFeedback({
+        type: "success",
+        title: "Apoyo eliminado",
+        message: `El apoyo "${apoyoAEliminar.nombre}" se retiro del catalogo.`,
+      });
+      setApoyoAEliminar(null);
 
       await cargarDatos();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "No se pudo eliminar el apoyo.";
       setError(message);
+      setToastFeedback({
+        type: "error",
+        title: "No se pudo eliminar",
+        message,
+      });
     } finally {
       setDeletingId(null);
     }
@@ -226,11 +130,23 @@ const AdminApoyos = () => {
           ? `El apoyo "${apoyo.nombre}" fue activado.`
           : `El apoyo "${apoyo.nombre}" fue desactivado.`
       );
+      setToastFeedback({
+        type: "success",
+        title: activo ? "Apoyo activado" : "Apoyo desactivado",
+        message: activo
+          ? "El apoyo vuelve a estar visible para los usuarios."
+          : "El apoyo quedo oculto del portal ciudadano.",
+      });
       await cargarDatos();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "No se pudo actualizar el estado del apoyo.";
       setError(message);
+      setToastFeedback({
+        type: "error",
+        title: "No se pudo actualizar",
+        message,
+      });
     } finally {
       setTogglingId(null);
     }
@@ -238,12 +154,6 @@ const AdminApoyos = () => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Apoyos</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent className="ion-padding">
         {loading ? (
           <Loader message="Cargando apoyos..." />
@@ -263,110 +173,32 @@ const AdminApoyos = () => {
 
             <div className="admin-apoyos-layout">
               <Card>
-                <div className="admin-apoyos-form">
+                <div className="admin-apoyos-entry">
                   <div>
-                    <p className="admin-apoyos__eyebrow">
-                      {editingId ? "Edicion de apoyo" : "Nuevo apoyo"}
-                    </p>
-                    <h3>
-                      {editingId ? "Actualizar apoyo existente" : "Agregar apoyo para municipio"}
-                    </h3>
+                    <p className="admin-apoyos__eyebrow">Acciones del catalogo</p>
+                    <h3>Registrar un nuevo apoyo</h3>
                     <p className="admin-apoyos__copy">
-                      Si dejas el municipio en general, el apoyo se mostrara para todos.
+                      Crea apoyos generales o municipales desde una vista dedicada, con
+                      toda la informacion necesaria antes de publicarlos.
                     </p>
                   </div>
 
-                  <InputField
-                    label="Nombre del apoyo"
-                    value={form.nombre}
-                    onChange={(value) => handleChange("nombre", value)}
-                    helperText="Ejemplo: Apoyo para lentes o silla de ruedas."
-                    error={errores.nombre}
-                  />
-
-                  <div className="form-field">
-                    <IonItem className={errores.descripcion ? "field-error" : ""}>
-                      <IonLabel position="stacked">Descripcion</IonLabel>
-                      <IonTextarea
-                        value={form.descripcion}
-                        autoGrow
-                        rows={4}
-                        onIonChange={(e) => handleChange("descripcion", e.detail.value || "")}
-                      />
-                    </IonItem>
-                    {errores.descripcion ? (
-                      <p className="field-error-text">{errores.descripcion}</p>
-                    ) : null}
+                  <div className="admin-apoyos-entry__details">
+                    <span>Define nombre, descripcion y requisitos.</span>
+                    <span>Asigna el apoyo a un municipio o dejalo como general.</span>
+                    <span>Vuelve al catalogo para editar, activar o eliminar registros.</span>
                   </div>
-
-                  <div className="form-field">
-                    <IonItem>
-                      <IonLabel>Municipio</IonLabel>
-                      <IonSelect
-                        interface="popover"
-                        value={form.municipio_id}
-                        placeholder="Selecciona municipio"
-                        onIonChange={(e) => handleChange("municipio_id", e.detail.value || "")}
-                      >
-                        <IonSelectOption value="">General para todos</IonSelectOption>
-                        {municipios.map((municipio) => (
-                          <IonSelectOption key={municipio.id} value={municipio.id}>
-                            {municipio.nombre}
-                          </IonSelectOption>
-                        ))}
-                      </IonSelect>
-                    </IonItem>
-                  </div>
-
-                  <div className="form-field">
-                    <IonItem className={errores.requisitos ? "field-error" : ""}>
-                      <IonLabel position="stacked">Requisitos</IonLabel>
-                      <IonTextarea
-                        value={form.requisitos}
-                        autoGrow
-                        rows={5}
-                        placeholder={"INE\nCURP\nComprobante de domicilio"}
-                        onIonChange={(e) => handleChange("requisitos", e.detail.value || "")}
-                      />
-                    </IonItem>
-                    <p className="field-helper">
-                      Escribe un requisito por linea para que luego se muestre claro en cada tarjeta.
-                    </p>
-                    {errores.requisitos ? (
-                      <p className="field-error-text">{errores.requisitos}</p>
-                    ) : null}
-                  </div>
-
-                  <p className="admin-apoyos__selected-scope">
-                    Alcance actual:{" "}
-                    <strong>
-                      {form.municipio_id
-                        ? municipios.find((municipio) => municipio.id === form.municipio_id)
-                            ?.nombre || "Municipio seleccionado"
-                        : "General para todos"}
-                    </strong>
-                  </p>
 
                   {feedback ? <p className="admin-apoyos__success">{feedback}</p> : null}
                   {error ? <p className="form-warning">{error}</p> : null}
 
-                  <div className="admin-apoyos-form__actions">
-                    {editingId ? (
-                      <IonButton fill="clear" color="medium" onClick={cancelarEdicion}>
-                        Cancelar edicion
-                      </IonButton>
-                    ) : null}
+                  <div className="admin-apoyos-entry__actions">
                     <IonButton fill="outline" color="medium" onClick={cargarDatos}>
                       Actualizar lista
                     </IonButton>
-                    <IonButton onClick={guardarApoyo} disabled={saving || !formValido}>
-                      {saving
-                        ? editingId
-                          ? "Actualizando..."
-                          : "Guardando..."
-                        : editingId
-                        ? "Actualizar apoyo"
-                        : "Guardar apoyo"}
+                    <IonButton onClick={() => history.push("/admin/apoyos/nuevo")}>
+                      <IonIcon icon={addCircleOutline} slot="start" />
+                      Crear apoyo
                     </IonButton>
                   </div>
                 </div>
@@ -440,7 +272,7 @@ const AdminApoyos = () => {
                             <IonButton
                               fill="outline"
                               color="medium"
-                              onClick={() => editarApoyo(apoyo)}
+                              onClick={() => history.push(`/admin/apoyos/editar/${apoyo.id}`)}
                             >
                               <IonIcon icon={createOutline} slot="start" />
                               Editar
@@ -464,6 +296,29 @@ const AdminApoyos = () => {
             </div>
           </div>
         )}
+
+        <IonAlert
+          isOpen={Boolean(apoyoAEliminar)}
+          header="Eliminar apoyo"
+          message={`Se eliminara el apoyo "${
+            apoyoAEliminar?.nombre || ""
+          }". Esta accion no se puede deshacer.`}
+          buttons={[
+            {
+              text: "Conservar",
+              role: "cancel",
+              handler: () => setApoyoAEliminar(null),
+            },
+            {
+              text: "Eliminar",
+              role: "destructive",
+              handler: confirmarEliminarApoyo,
+            },
+          ]}
+          onDidDismiss={() => setApoyoAEliminar(null)}
+        />
+
+        <AppFeedback feedback={toastFeedback} onClose={() => setToastFeedback(null)} />
       </IonContent>
     </IonPage>
   );

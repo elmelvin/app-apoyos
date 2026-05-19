@@ -25,7 +25,20 @@ export const useSolicitudForm = () => {
     return data.publicUrl;
   };
 
-  const enviar = async (form: any, apoyoSeleccionado?: ApoyoSeleccionadoPayload | null) => {
+  const eliminarArchivoSiExiste = async (url?: string | null) => {
+    const ruta = obtenerRutaStorage(url);
+
+    if (!ruta) return;
+
+    await supabase.storage.from("documentos").remove([ruta]);
+  };
+
+  const enviar = async (
+    form: any,
+    apoyoSeleccionado?: ApoyoSeleccionadoPayload | null,
+    solicitudId?: string | null,
+    documentosActuales?: Array<{ id?: string; url: string; tipo_documento: string }>
+  ) => {
 
     setLoading(true);
 
@@ -44,12 +57,16 @@ export const useSolicitudForm = () => {
         throw new Error("No se encontro el perfil del usuario");
       }
 
+      if (!apoyoSeleccionado?.id || !apoyoSeleccionado?.nombre) {
+        throw new Error("No se encontro el apoyo seleccionado para esta solicitud");
+      }
+
       const payloadBase = {
         usuario_id: user.id,
         nombre: form.nombre,
         telefono: form.telefono,
         direccion: form.direccion,
-        mensaje: form.mensaje,
+        mensaje: construirMensajeCompleto(form),
         municipio_id: perfil.municipio_id,
         comunidad_id: perfil.comunidad_id,
       };
@@ -63,27 +80,36 @@ export const useSolicitudForm = () => {
       let solicitudError = null;
       let solicitud = null;
 
-      const insercionConApoyo = await supabase
-        .from("solicitudes")
-        .insert(payloadConApoyo)
-        .select()
-        .single();
-
-      solicitud = insercionConApoyo.data;
-      solicitudError = insercionConApoyo.error;
-
-      if (solicitudError && faltaColumnaApoyo(solicitudError.message)) {
-        const insercionLegacy = await supabase
+      if (solicitudId) {
+        const actualizacionConApoyo = await supabase
           .from("solicitudes")
-          .insert(payloadBase)
+          .update(payloadConApoyo)
+          .eq("id", solicitudId)
+          .eq("usuario_id", user.id)
+          .eq("estado", "pendiente")
           .select()
           .single();
 
-        solicitud = insercionLegacy.data;
-        solicitudError = insercionLegacy.error;
+        solicitud = actualizacionConApoyo.data;
+        solicitudError = actualizacionConApoyo.error;
+
+      } else {
+        const insercionConApoyo = await supabase
+          .from("solicitudes")
+          .insert(payloadConApoyo)
+          .select()
+          .single();
+
+        solicitud = insercionConApoyo.data;
+        solicitudError = insercionConApoyo.error;
+
       }
 
       if (solicitudError) {
+        if (faltaColumnaApoyo(solicitudError.message)) {
+          throw new Error("Faltan las columnas apoyo_id y apoyo_nombre en la tabla solicitudes");
+        }
+
         throw solicitudError;
       }
 
@@ -91,23 +117,43 @@ export const useSolicitudForm = () => {
         throw new Error("No se pudo crear la solicitud");
       }
 
-      const urls = await Promise.all([
-        subirArchivo(form.ine, "ine"),
-        subirArchivo(form.curp, "curp"),
-        subirArchivo(form.comprobante, "comprobante"),
-        subirArchivo(form.foto, "foto"),
-      ]);
+      const documentos = Object.entries(form.documentos || {}).filter(([, file]) => Boolean(file));
 
-      if (urls.some((url) => !url)) {
-        throw new Error("No se pudieron subir todos los documentos");
+      if (documentos.length === 0) {
+        throw new Error("No se adjuntaron documentos");
       }
 
-      const { error: documentosError } = await supabase.from("documentos").insert([
-        { solicitud_id: solicitud.id, url: urls[0], tipo_documento: "ine" },
-        { solicitud_id: solicitud.id, url: urls[1], tipo_documento: "curp" },
-        { solicitud_id: solicitud.id, url: urls[2], tipo_documento: "comprobante" },
-        { solicitud_id: solicitud.id, url: urls[3], tipo_documento: "foto" }
-      ]);
+      if (solicitudId) {
+        await Promise.all((documentosActuales || []).map((documento) => eliminarArchivoSiExiste(documento.url)));
+
+        const { error: deleteDocsError } = await supabase
+          .from("documentos")
+          .delete()
+          .eq("solicitud_id", solicitudId);
+
+        if (deleteDocsError) {
+          throw deleteDocsError;
+        }
+      }
+
+      const documentosSubidos = await Promise.all(
+        documentos.map(async ([tipoDocumento, file]) => {
+          const carpeta = normalizarNombreDocumento(tipoDocumento);
+          const url = await subirArchivo(file as File, carpeta);
+
+          if (!url) {
+            throw new Error(`No se pudo subir el documento ${tipoDocumento}`);
+          }
+
+          return {
+            solicitud_id: solicitud.id,
+            url,
+            tipo_documento: tipoDocumento,
+          };
+        })
+      );
+
+      const { error: documentosError } = await supabase.from("documentos").insert(documentosSubidos);
 
       if (documentosError) {
         throw documentosError;
@@ -129,4 +175,37 @@ export const useSolicitudForm = () => {
 const faltaColumnaApoyo = (message?: string) => {
   const texto = (message || "").toLowerCase();
   return texto.includes("apoyo_id") || texto.includes("apoyo_nombre");
+};
+
+const construirMensajeCompleto = (form: any) => {
+  const resumen = [
+    "Resumen socioeconomico:",
+    `Ingreso del hogar: ${form.ingresoHogar || "No especificado"}`,
+    `Dependientes: ${form.dependientes || "No especificado"}`,
+    `Situacion laboral: ${form.situacionLaboral || "No especificada"}`,
+    `Tipo de vivienda: ${form.tipoVivienda || "No especificado"}`,
+    `Servicios basicos: ${form.serviciosBasicos || "No especificado"}`,
+    `Apoyo adicional: ${form.apoyoAdicional || "No especificado"}`,
+  ].join("\n");
+
+  return `${form.mensaje}\n\n${resumen}`.trim();
+};
+
+const normalizarNombreDocumento = (nombre: string) =>
+  nombre
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "documento";
+
+const obtenerRutaStorage = (url?: string | null) => {
+  if (!url) return null;
+
+  const marcador = "/storage/v1/object/public/documentos/";
+  const indice = url.indexOf(marcador);
+
+  if (indice === -1) return null;
+
+  return url.slice(indice + marcador.length);
 };

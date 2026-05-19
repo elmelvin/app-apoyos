@@ -1,7 +1,9 @@
 import {
   Area,
-  AreaChart,
+  Bar,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -12,6 +14,8 @@ export interface AdminTrendPoint {
   day: string;
   total: number;
   pendientes: number;
+  aprobados: number;
+  rechazados: number;
 }
 
 interface AdminTrendChartProps {
@@ -22,12 +26,8 @@ const AdminTrendChart = ({ data }: AdminTrendChartProps) => {
   return (
     <div className="admin-trend-chart">
       <ResponsiveContainer width="100%" height={260}>
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+        <ComposedChart data={data} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
           <defs>
-            <linearGradient id="adminTotalFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#2f855a" stopOpacity={0.32} />
-              <stop offset="95%" stopColor="#2f855a" stopOpacity={0.04} />
-            </linearGradient>
             <linearGradient id="adminPendingFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.26} />
               <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.04} />
@@ -38,14 +38,8 @@ const AdminTrendChart = ({ data }: AdminTrendChartProps) => {
           <XAxis dataKey="day" tickLine={false} axisLine={false} />
           <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
           <Tooltip />
-          <Area
-            type="monotone"
-            dataKey="total"
-            stroke="#2f855a"
-            strokeWidth={3}
-            fill="url(#adminTotalFill)"
-            name="Solicitudes"
-          />
+          <Bar dataKey="aprobados" fill="#2f855a" radius={[6, 6, 0, 0]} name="Aprobadas" />
+          <Bar dataKey="rechazados" fill="#dc2626" radius={[6, 6, 0, 0]} name="Rechazadas" />
           <Area
             type="monotone"
             dataKey="pendientes"
@@ -54,7 +48,15 @@ const AdminTrendChart = ({ data }: AdminTrendChartProps) => {
             fill="url(#adminPendingFill)"
             name="Pendientes"
           />
-        </AreaChart>
+          <Line
+            type="monotone"
+            dataKey="total"
+            stroke="#155eef"
+            strokeWidth={3}
+            dot={{ r: 3 }}
+            name="Total"
+          />
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );

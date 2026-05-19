@@ -2,22 +2,23 @@ import {
   IonBadge,
   IonButton,
   IonContent,
-  IonHeader,
+  IonIcon,
   IonItem,
   IonLabel,
   IonPage,
   IonSearchbar,
   IonSelect,
   IonSelectOption,
-  IonTitle,
-  IonToolbar,
+  IonTextarea,
   useIonViewWillEnter,
 } from "@ionic/react";
+import { cloudDownloadOutline, folderOpenOutline } from "ionicons/icons";
 import { useMemo, useState } from "react";
 import AdminHeader from "../../components/admin/AdminHeader";
 import DocumentosModal from "../../components/solicitudes/DocumentosModal";
 import Card from "../../components/utilidades/Card";
 import EmptyState from "../../components/utilidades/EmptyState";
+import AppFeedback, { AppFeedbackState } from "../../components/utilidades/AppFeedback";
 import Loader from "../../components/utilidades/Loader";
 import StatCard from "../../components/utilidades/StatCard";
 import {
@@ -46,14 +47,22 @@ const obtenerExtension = (url: string) => {
 };
 
 const AdminSolicitudes = () => {
-  const { solicitudes, loading, updatingId, actualizarEstado, cargarSolicitudes } =
-    useAdminSolicitudes();
+  const {
+    solicitudes,
+    loading,
+    updatingId,
+    actualizarEstado,
+    actualizarComentario,
+    cargarSolicitudes,
+  } = useAdminSolicitudes();
   const [documentos, setDocumentos] = useState<Documento[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [estadoFiltro, setEstadoFiltro] = useState("todos");
   const [municipioFiltro, setMunicipioFiltro] = useState("todos");
   const [comunidadFiltro, setComunidadFiltro] = useState("todos");
   const [busqueda, setBusqueda] = useState("");
+  const [comentariosDraft, setComentariosDraft] = useState<Record<string, string>>({});
+  const [feedback, setFeedback] = useState<AppFeedbackState | null>(null);
 
   const municipiosDisponibles = useMemo(
     () =>
@@ -95,6 +104,7 @@ const AdminSolicitudes = () => {
             solicitud.telefono || "",
             solicitud.direccion || "",
             solicitud.mensaje || "",
+            solicitud.comentario_admin || "",
             solicitud.municipio || "",
             solicitud.comunidad || "",
           ]
@@ -150,7 +160,11 @@ const AdminSolicitudes = () => {
 
   const descargarDocumentos = (solicitud: SolicitudAdmin) => {
     if (!solicitud.documentos.length) {
-      alert("Esta solicitud no tiene documentos para descargar.");
+      setFeedback({
+        type: "info",
+        title: "Sin documentos",
+        message: "Esta solicitud todavia no tiene archivos disponibles para descargar.",
+      });
       return;
     }
 
@@ -166,19 +180,63 @@ const AdminSolicitudes = () => {
       enlace.click();
       document.body.removeChild(enlace);
     });
+
+    setFeedback({
+      type: "success",
+      title: "Descarga iniciada",
+      message: `Se prepararon ${solicitud.documentos.length} documento(s) para ${solicitud.nombre}.`,
+    });
   };
 
   const cambiarEstado = async (solicitudId: string, estado: string) => {
     const resultado = await actualizarEstado(solicitudId, estado);
 
     if (!resultado.ok) {
-      alert(
-        `No se pudo actualizar el estado. ${
+      setFeedback({
+        type: "error",
+        title: "Estado no actualizado",
+        message: `No se pudo actualizar el estado. ${
           resultado.error ||
           "Revisa la policy UPDATE de la tabla solicitudes en Supabase."
-        }`
-      );
+        }`,
+      });
+      return;
     }
+
+    setFeedback({
+      type: "success",
+      title: "Estado actualizado",
+      message: `La solicitud quedo marcada como ${obtenerEtiquetaEstado(estado).toLowerCase()}.`,
+    });
+  };
+
+  const guardarComentario = async (solicitud: SolicitudAdmin) => {
+    const comentario =
+      comentariosDraft[solicitud.id] ?? solicitud.comentario_admin ?? "";
+    const resultado = await actualizarComentario(solicitud.id, comentario);
+
+    if (!resultado.ok) {
+      setFeedback({
+        type: "error",
+        title: "Comentario no guardado",
+        message:
+          resultado.error ||
+          "Revisa que la columna comentario_admin exista y tenga permisos UPDATE.",
+      });
+      return;
+    }
+
+    setComentariosDraft((actuales) => {
+      const siguientes = { ...actuales };
+      delete siguientes[solicitud.id];
+      return siguientes;
+    });
+
+    setFeedback({
+      type: "success",
+      title: "Comentario guardado",
+      message: "El usuario podra ver esta nota en su solicitud.",
+    });
   };
 
   useIonViewWillEnter(() => {
@@ -187,12 +245,6 @@ const AdminSolicitudes = () => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Todas las solicitudes</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent className="ion-padding">
         {loading ? (
           <Loader />
@@ -366,6 +418,36 @@ const AdminSolicitudes = () => {
                           <span>Mensaje</span>
                           <p>{solicitud.mensaje || "Sin mensaje"}</p>
                         </div>
+                        <div className="admin-meta-item admin-meta-item--wide admin-comment-box">
+                          <span>Comentario para el usuario</span>
+                          <IonTextarea
+                            className="admin-comment-input"
+                            value={
+                              comentariosDraft[solicitud.id] ??
+                              solicitud.comentario_admin ??
+                              ""
+                            }
+                            autoGrow
+                            rows={3}
+                            placeholder="Escribe una observacion, indicacion o motivo de revision."
+                            onIonInput={(e) =>
+                              setComentariosDraft((actuales) => ({
+                                ...actuales,
+                                [solicitud.id]: e.detail.value || "",
+                              }))
+                            }
+                          />
+                          <IonButton
+                            className="admin-comment-save"
+                            size="small"
+                            fill="outline"
+                            color="success"
+                            disabled={updatingId === solicitud.id}
+                            onClick={() => guardarComentario(solicitud)}
+                          >
+                            {updatingId === solicitud.id ? "Guardando..." : "Guardar comentario"}
+                          </IonButton>
+                        </div>
                         <div className="admin-meta-item">
                           <span>Documentos</span>
                           <strong>{solicitud.documentos.length}</strong>
@@ -408,7 +490,8 @@ const AdminSolicitudes = () => {
                             expand="block"
                             onClick={() => verDocumentos(solicitud)}
                           >
-                            Ver documentos
+                            <IonIcon slot="start" icon={folderOpenOutline} />
+                            Ver docs
                           </IonButton>
                           <IonButton
                             className="admin-action-button"
@@ -416,7 +499,8 @@ const AdminSolicitudes = () => {
                             fill="outline"
                             onClick={() => descargarDocumentos(solicitud)}
                           >
-                            Descargar docs
+                            <IonIcon slot="start" icon={cloudDownloadOutline} />
+                            Descargar
                           </IonButton>
                         </div>
                       </div>
@@ -433,6 +517,8 @@ const AdminSolicitudes = () => {
           setShow={setShowModal}
           documentos={documentos}
         />
+
+        <AppFeedback feedback={feedback} onClose={() => setFeedback(null)} />
       </IonContent>
     </IonPage>
   );

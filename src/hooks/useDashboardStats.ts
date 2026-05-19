@@ -7,12 +7,19 @@ export interface DashboardSolicitudReciente {
   telefono: string | null;
   estado: string | null;
   created_at: string;
+  apoyo_nombre?: string | null;
+  municipio_id?: string | null;
+  comunidad_id?: string | null;
+  municipio: string | null;
+  comunidad: string | null;
 }
 
 export interface DashboardTimelinePoint {
   day: string;
   total: number;
   pendientes: number;
+  aprobados: number;
+  rechazados: number;
 }
 
 export const useDashboardStats = () => {
@@ -22,6 +29,7 @@ export const useDashboardStats = () => {
   const [rechazados, setRechazados] = useState(0);
 
   const [recientes, setRecientes] = useState<DashboardSolicitudReciente[]>([]);
+  const [solicitudes, setSolicitudes] = useState<DashboardSolicitudReciente[]>([]);
   const [timeline, setTimeline] = useState<DashboardTimelinePoint[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,7 +38,18 @@ export const useDashboardStats = () => {
 
     const { data, error } = await supabase
       .from("solicitudes")
-      .select("id, nombre, telefono, estado, created_at")
+      .select(`
+        id,
+        nombre,
+        telefono,
+        estado,
+        created_at,
+        apoyo_nombre,
+        municipio_id,
+        comunidad_id,
+        municipios:municipio_id(nombre),
+        comunidades:comunidad_id(nombre)
+      `)
       .order("created_at", { ascending: false });
 
     if (error || !data) {
@@ -40,20 +59,29 @@ export const useDashboardStats = () => {
       setAprobados(0);
       setRechazados(0);
       setRecientes([]);
+      setSolicitudes([]);
       setTimeline([]);
       setLoading(false);
       return;
     }
 
-    setTotal(data.length);
-    setPendientes(
-      data.filter((s) => (s.estado || "pendiente") === "pendiente").length
-    );
-    setAprobados(data.filter((s) => s.estado === "aprobado").length);
-    setRechazados(data.filter((s) => s.estado === "rechazado").length);
+    const normalizadas = (data as DashboardSolicitudRaw[]).map((solicitud) => ({
+      ...solicitud,
+      estado: solicitud.estado || "pendiente",
+      municipio: obtenerNombreRelacion(solicitud.municipios),
+      comunidad: obtenerNombreRelacion(solicitud.comunidades),
+    }));
 
-    setRecientes(data.slice(0, 5));
-    setTimeline(construirTimeline(data));
+    setTotal(normalizadas.length);
+    setPendientes(
+      normalizadas.filter((s) => (s.estado || "pendiente") === "pendiente").length
+    );
+    setAprobados(normalizadas.filter((s) => s.estado === "aprobado").length);
+    setRechazados(normalizadas.filter((s) => s.estado === "rechazado").length);
+
+    setRecientes(normalizadas.slice(0, 5));
+    setSolicitudes(normalizadas);
+    setTimeline(construirTimeline(normalizadas));
 
     setLoading(false);
   };
@@ -68,6 +96,7 @@ export const useDashboardStats = () => {
     aprobados,
     rechazados,
     recientes,
+    solicitudes,
     timeline,
     loading,
   };
@@ -86,6 +115,8 @@ const construirTimeline = (data: DashboardSolicitudReciente[]): DashboardTimelin
       day: capitalizar(formatter.format(fecha).replace(".", "")),
       total: 0,
       pendientes: 0,
+      aprobados: 0,
+      rechazados: 0,
     };
   });
 
@@ -102,6 +133,10 @@ const construirTimeline = (data: DashboardSolicitudReciente[]): DashboardTimelin
     dia.total += 1;
     if ((solicitud.estado || "pendiente") === "pendiente") {
       dia.pendientes += 1;
+    } else if (solicitud.estado === "aprobado") {
+      dia.aprobados += 1;
+    } else if (solicitud.estado === "rechazado") {
+      dia.rechazados += 1;
     }
   });
 
@@ -109,7 +144,35 @@ const construirTimeline = (data: DashboardSolicitudReciente[]): DashboardTimelin
     day: dia.day,
     total: dia.total,
     pendientes: dia.pendientes,
+    aprobados: dia.aprobados,
+    rechazados: dia.rechazados,
   }));
 };
 
 const capitalizar = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
+
+type RelacionNombre =
+  | {
+      nombre?: string | null;
+    }
+  | Array<{
+      nombre?: string | null;
+    }>
+  | undefined
+  | null;
+
+type DashboardSolicitudRaw = Omit<
+  DashboardSolicitudReciente,
+  "municipio" | "comunidad"
+> & {
+  municipios?: RelacionNombre;
+  comunidades?: RelacionNombre;
+};
+
+const obtenerNombreRelacion = (relacion: RelacionNombre) => {
+  if (Array.isArray(relacion)) {
+    return relacion[0]?.nombre || null;
+  }
+
+  return relacion?.nombre || null;
+};

@@ -1,2 +1,108 @@
 /* For information on how to create your own theme, please refer to:
 http://ionicframework.com/docs/theming/ */
+
+:root {
+  color-scheme: light;
+  --app-keyboard-height: 0px;
+  --app-green-900: #123524;
+  --app-green-700: #1f6f46;
+  --app-green-600: #2d6a4f;
+  --app-text: #172033;
+  --app-muted: #5f6b7a;
+  --app-surface: #ffffff;
+  --app-surface-soft: #f7faf8;
+  --app-border: #dfe8e2;
+  --app-shadow-card: 0 10px 24px rgba(18, 53, 36, 0.07);
+  --app-shadow-raised: 0 16px 32px rgba(18, 53, 36, 0.12);
+  --app-radius-card: 8px;
+  --ion-color-primary: #1f6f46;
+  --ion-color-primary-rgb: 31, 111, 70;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #1b623e;
+  --ion-color-primary-tint: #357d59;
+  --ion-background-color: #f4f7fb;
+  --ion-background-color-rgb: 244, 247, 251;
+  --ion-text-color: #172033;
+  --ion-text-color-rgb: 23, 32, 51;
+  --ion-card-background: #ffffff;
+  --ion-item-background: #ffffff;
+  --ion-toolbar-background: #ffffff;
+  --ion-tab-bar-background: #ffffff;
+}
+
+body.keyboard-is-open ion-content {
+  --keyboard-offset: var(--app-keyboard-height);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #f4f7fb;
+  color: var(--app-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html,
+body,
+ion-app {
+  color-scheme: light;
+}
+
+ion-content {
+  --color: var(--app-text);
+}
+
+ion-card,
+ion-item,
+ion-list,
+ion-modal,
+ion-popover {
+  --background: #ffffff;
+  --color: var(--app-text);
+}
+
+ion-input,
+ion-textarea,
+ion-select {
+  --color: var(--app-text);
+  --placeholder-color: #667085;
+  --placeholder-opacity: 1;
+}
+
+input,
+textarea,
+select {
+  color-scheme: light;
+}
+
+ion-button {
+  text-transform: none;
+  font-weight: 700;
+}
+
+ion-tab-bar {
+  height: calc(36px + var(--ion-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
+  padding: 3px 18px calc(3px + var(--ion-safe-area-bottom, env(safe-area-inset-bottom, 0px)));
+  border-top: 1px solid rgba(18, 53, 36, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -10px 24px rgba(18, 53, 36, 0.08);
+}
+
+ion-tab-button {
+  --color: #6b7280;
+  --color-selected: var(--app-green-700);
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+ion-tab-button ion-icon {
+  font-size: 19px;
+}
+
+ion-tab-button ion-label {
+  font-size: 11px;
+}

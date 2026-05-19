@@ -1,4 +1,5 @@
 import { supabase } from "./supabaseClient";
+import { getFriendlyDatabaseErrorMessage } from "../utils/databaseErrorMessages";
 
 export interface Apoyo {
   id: string;
@@ -36,7 +37,9 @@ export const getApoyos = async (municipioId?: string | null) => {
   const { data, error } = await query;
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      getFriendlyDatabaseErrorMessage(error, "No se pudieron cargar los apoyos.")
+    );
   }
 
   return (data || []) as Apoyo[];
@@ -51,7 +54,9 @@ export const getAdminApoyos = async () => {
     .order("fecha_creacion", { ascending: false });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      getFriendlyDatabaseErrorMessage(error, "No se pudieron cargar los apoyos.")
+    );
   }
 
   return (data || []).map((apoyo) => ({
@@ -73,7 +78,9 @@ export const getMunicipios = async () => {
     .order("nombre");
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      getFriendlyDatabaseErrorMessage(error, "No se pudieron cargar los municipios.")
+    );
   }
 
   return (data || []) as MunicipioOption[];
@@ -94,7 +101,9 @@ export const crearApoyo = async (payload: {
   });
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      getFriendlyDatabaseErrorMessage(error, "No se pudo crear el apoyo.")
+    );
   }
 };
 
@@ -118,7 +127,9 @@ export const actualizarApoyo = async (
     .eq("id", id);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      getFriendlyDatabaseErrorMessage(error, "No se pudo actualizar el apoyo.")
+    );
   }
 };
 
@@ -126,7 +137,9 @@ export const eliminarApoyo = async (id: string) => {
   const { error } = await supabase.from("apoyos").delete().eq("id", id);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      getFriendlyDatabaseErrorMessage(error, "No se pudo eliminar el apoyo.")
+    );
   }
 };
 
@@ -137,7 +150,9 @@ export const cambiarEstadoApoyo = async (id: string, activo: boolean) => {
     .eq("id", id);
 
   if (error) {
-    throw new Error(error.message);
+    throw new Error(
+      getFriendlyDatabaseErrorMessage(error, "No se pudo actualizar el estado del apoyo.")
+    );
   }
 };
 

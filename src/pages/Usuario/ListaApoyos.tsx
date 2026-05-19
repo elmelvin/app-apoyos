@@ -8,12 +8,9 @@ import {
   IonCol,
   IonContent,
   IonGrid,
-  IonHeader,
   IonIcon,
   IonPage,
   IonRow,
-  IonTitle,
-  IonToolbar,
 } from "@ionic/react";
 import { useEffect, useMemo, useState } from "react";
 import { useHistory } from "react-router-dom";
@@ -26,13 +23,17 @@ import {
 } from "ionicons/icons";
 import EmptyState from "../../components/utilidades/EmptyState";
 import Loader from "../../components/utilidades/Loader";
+import UsuarioTopBar from "../../components/usuario/UsuarioTopBar";
 import {
   Apoyo,
   ApoyoSeleccionadoPayload,
   getApoyos,
 } from "../../services/apoyosService";
 import { supabase } from "../../services/supabaseClient";
+import { guardarApoyoSeleccionado } from "../../utils/apoyoSeleccionadoStorage";
 import "./ListaApoyos.css";
+
+const DOCUMENTO_EVIDENCIA_SOLICITUD = "Evidencia de la solicitud";
 
 const ListaApoyos: React.FC = () => {
   const history = useHistory();
@@ -79,8 +80,10 @@ const ListaApoyos: React.FC = () => {
       id: apoyo.id,
       nombre: apoyo.nombre,
       descripcion: apoyo.descripcion,
-      requisitos: obtenerRequisitos(apoyo.requisitos),
+      requisitos: obtenerRequisitos(apoyo),
     };
+
+    guardarApoyoSeleccionado(apoyoSeleccionado);
 
     history.push("/usuario/formulario-Solicitud", {
       apoyoSeleccionado,
@@ -89,30 +92,23 @@ const ListaApoyos: React.FC = () => {
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Apoyos disponibles</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent className="apoyos-bg">
         <div className="apoyos-layout">
           <section className="apoyos-hero">
-            <div>
+            <div className="apoyos-hero__topbar">
+              <UsuarioTopBar variant="hero" />
+            </div>
+
+            <div className="apoyos-hero__content">
               <p className="apoyos-hero__eyebrow">Catalogo dinamico</p>
               <h1>Apoyos disponibles</h1>
               <p className="apoyos-hero__text">
-                Esta lista se alimenta desde la base de datos y muestra apoyos
-                globales junto con los asignados a tu municipio
+                Apoyos activos para tu municipio
                 {municipioNombre ? `: ${municipioNombre}.` : "."}
               </p>
             </div>
 
-            <div className="apoyos-hero__stats">
-              <div className="apoyos-stat">
-                <span>Total visibles</span>
-                <strong>{apoyos.length}</strong>
-              </div>
+            <div className="apoyos-hero__actions">
               <IonButton fill="outline" color="light" onClick={cargarApoyos}>
                 Actualizar lista
               </IonButton>
@@ -132,7 +128,7 @@ const ListaApoyos: React.FC = () => {
             <IonGrid className="apoyos-grid">
               <IonRow>
                 {apoyosConIcono.map((apoyo) => {
-                  const requisitos = obtenerRequisitos(apoyo.requisitos);
+                  const requisitos = obtenerRequisitos(apoyo);
 
                   return (
                     <IonCol size="12" sizeMd="6" key={apoyo.id}>
@@ -250,8 +246,64 @@ const resolverIcono = (apoyo: Apoyo) => {
   return bagHandleOutline;
 };
 
-const obtenerRequisitos = (requisitos?: string | null) =>
-  (requisitos || "")
+const obtenerRequisitos = (apoyo: Apoyo) => {
+  const requisitosLimpios = (apoyo.requisitos || "")
     .split(/\r?\n|,|;|•/)
     .map((item) => item.trim())
     .filter(Boolean);
+  const requiereEvidenciaSolicitud = esApoyoMedicoODiscapacidad(apoyo);
+  const requisitosSinDuplicados = requiereEvidenciaSolicitud
+    ? requisitosLimpios.filter((requisito) => !esDocumentoMedico(requisito))
+    : requisitosLimpios;
+  const requisitosConEvidencia = requiereEvidenciaSolicitud
+    ? agregarSiFalta(requisitosSinDuplicados, DOCUMENTO_EVIDENCIA_SOLICITUD)
+    : requisitosSinDuplicados;
+
+  return requisitosConEvidencia;
+};
+
+const normalizarTexto = (texto: string) =>
+  texto
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const agregarSiFalta = (documentos: string[], nuevoDocumento: string) =>
+  documentos.some((documento) => normalizarTexto(documento) === normalizarTexto(nuevoDocumento))
+    ? documentos
+    : [...documentos, nuevoDocumento];
+
+const esApoyoMedicoODiscapacidad = (apoyo: Apoyo) => {
+  const texto = normalizarTexto(`${apoyo.nombre} ${apoyo.descripcion || ""}`);
+
+  return [
+    "discapacidad",
+    "medic",
+    "salud",
+    "tratamiento",
+    "terapia",
+    "consulta",
+    "medicamento",
+    "estudio",
+    "analisis",
+    "cirugia",
+    "silla de ruedas",
+    "andadera",
+    "muleta",
+    "baston",
+    "protesis",
+    "aparato auditivo",
+    "movilidad",
+  ].some((termino) => texto.includes(termino));
+};
+
+const esDocumentoMedico = (documento: string) => {
+  const texto = normalizarTexto(documento);
+
+  return [
+    "documento medico",
+    "certificado medico",
+    "constancia medica",
+    "diagnostico medico",
+  ].some((termino) => texto.includes(termino));
+};

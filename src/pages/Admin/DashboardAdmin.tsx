@@ -16,7 +16,7 @@ const DashboardAdmin = () => {
     pendientes,
     aprobados,
     rechazados,
-    recientes,
+    solicitudes,
     timeline,
     loading,
   } = useDashboardStats();
@@ -54,6 +54,7 @@ const DashboardAdmin = () => {
       : 0;
     const tasaAprobacion = total ? Math.round((aprobados / total) * 100) : 0;
     const solicitudesHoy = timeline[timeline.length - 1]?.total || 0;
+    const solicitudesSemana = timeline.reduce((acc, punto) => acc + punto.total, 0);
 
     return [
       {
@@ -71,16 +72,45 @@ const DashboardAdmin = () => {
         value: `${solicitudesHoy}`,
         hint: "Registros del dia actual",
       },
+      {
+        label: "Semana",
+        value: `${solicitudesSemana}`,
+        hint: "Solicitudes en los ultimos 7 dias",
+      },
     ];
   }, [aprobados, rechazados, timeline, total]);
 
-  const prioridades = useMemo(
-    () =>
-      recientes
-        .filter((solicitud) => (solicitud.estado || "pendiente") === "pendiente")
-        .slice(0, 3),
-    [recientes]
-  );
+  const analitica = useMemo(() => {
+    const pendientesLista = solicitudes.filter(
+      (solicitud) => (solicitud.estado || "pendiente") === "pendiente"
+    );
+    const resueltas = aprobados + rechazados;
+    const promedioPendiente = pendientesLista.length
+      ? Math.round(
+          pendientesLista.reduce(
+            (acc, solicitud) => acc + diasDesde(solicitud.created_at),
+            0
+          ) / pendientesLista.length
+        )
+      : 0;
+
+    return {
+      resueltas,
+      promedioPendiente,
+      topApoyos: obtenerTop(
+        solicitudes.map((solicitud) => solicitud.apoyo_nombre || "Sin apoyo especificado")
+      ),
+      topMunicipios: obtenerTop(
+        solicitudes.map((solicitud) => solicitud.municipio || "Sin municipio")
+      ),
+      pendientesCriticos: [...pendientesLista]
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        )
+        .slice(0, 5),
+    };
+  }, [aprobados, rechazados, solicitudes]);
 
   return (
     <IonPage>
@@ -91,7 +121,7 @@ const DashboardAdmin = () => {
           <div className="admin-dashboard">
             <AdminHeader
               title="Dashboard"
-              subtitle="Supervisa el flujo de solicitudes, detecta cuellos de botella y entra rápido a las revisiones pendientes."
+              subtitle="Supervisa el flujo de solicitudes y las revisiones pendientes."
             />
 
             <div className="stats-grid">
@@ -103,15 +133,26 @@ const DashboardAdmin = () => {
 
             <div className="dashboard-panels">
               <Card>
-                <div className="dashboard-summary">
+                <div className="dashboard-command">
                   <div>
                     <p className="dashboard-summary__eyebrow">Resumen general</p>
-                    <h3>Estado del proceso</h3>
+                    <h3>Estado operativo</h3>
                     <p className="dashboard-summary__text">
                       {pendientes > 0
                         ? `Hay ${pendientes} solicitudes esperando revisión.`
                         : "No hay solicitudes pendientes en este momento."}
                     </p>
+                  </div>
+
+                  <div className="dashboard-command__metrics">
+                    <div>
+                      <span>Resueltas</span>
+                      <strong>{analitica.resueltas}</strong>
+                    </div>
+                    <div>
+                      <span>Espera promedio</span>
+                      <strong>{analitica.promedioPendiente} dias</strong>
+                    </div>
                   </div>
 
                   <div className="dashboard-summary__actions">
@@ -188,17 +229,17 @@ const DashboardAdmin = () => {
               <Card>
                 <div className="dashboard-priority">
                   <div>
-                    <p className="dashboard-summary__eyebrow">Atencion inmediata</p>
-                    <h3>Casos por revisar primero</h3>
+                    <p className="dashboard-summary__eyebrow">Pendientes criticos</p>
+                    <h3>Mas tiempo en espera</h3>
                   </div>
 
-                  {prioridades.length === 0 ? (
+                  {analitica.pendientesCriticos.length === 0 ? (
                     <p className="dashboard-priority__empty">
                       No hay pendientes urgentes en las solicitudes recientes.
                     </p>
                   ) : (
                     <div className="dashboard-priority__list">
-                      {prioridades.map((solicitud) => (
+                      {analitica.pendientesCriticos.map((solicitud) => (
                         <button
                           key={solicitud.id}
                           className="dashboard-priority__item"
@@ -206,14 +247,32 @@ const DashboardAdmin = () => {
                         >
                           <div>
                             <strong>{solicitud.nombre}</strong>
-                            <p>{solicitud.telefono || "Sin telefono registrado"}</p>
+                            <p>{solicitud.apoyo_nombre || "Apoyo no especificado"}</p>
                           </div>
-                          <span>Pendiente</span>
+                          <span>{diasDesde(solicitud.created_at)} dias</span>
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
+              </Card>
+            </div>
+
+            <div className="dashboard-insights-grid">
+              <Card>
+                <DashboardRanking
+                  eyebrow="Demanda"
+                  title="Apoyos mas solicitados"
+                  items={analitica.topApoyos}
+                />
+              </Card>
+
+              <Card>
+                <DashboardRanking
+                  eyebrow="Territorio"
+                  title="Municipios con mas registros"
+                  items={analitica.topMunicipios}
+                />
               </Card>
             </div>
 
@@ -225,3 +284,72 @@ const DashboardAdmin = () => {
 };
 
 export default DashboardAdmin;
+
+type RankingItem = {
+  label: string;
+  count: number;
+  percentage: number;
+};
+
+const DashboardRanking = ({
+  eyebrow,
+  title,
+  items,
+}: {
+  eyebrow: string;
+  title: string;
+  items: RankingItem[];
+}) => (
+  <div className="dashboard-ranking">
+    <div>
+      <p className="dashboard-summary__eyebrow">{eyebrow}</p>
+      <h3>{title}</h3>
+    </div>
+
+    {items.length === 0 ? (
+      <p className="dashboard-priority__empty">Aun no hay datos suficientes.</p>
+    ) : (
+      <div className="dashboard-ranking__list">
+        {items.map((item) => (
+          <div key={item.label} className="dashboard-ranking__item">
+            <div className="dashboard-ranking__row">
+              <strong>{item.label}</strong>
+              <span>{item.count}</span>
+            </div>
+            <div className="dashboard-ranking__bar">
+              <div style={{ width: `${item.percentage}%` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+);
+
+const obtenerTop = (valores: string[]): RankingItem[] => {
+  const conteo = valores.reduce<Record<string, number>>((acc, valor) => {
+    acc[valor] = (acc[valor] || 0) + 1;
+    return acc;
+  }, {});
+  const maximo = Math.max(...Object.values(conteo), 0);
+
+  return Object.entries(conteo)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([label, count]) => ({
+      label,
+      count,
+      percentage: maximo ? Math.round((count / maximo) * 100) : 0,
+    }));
+};
+
+const diasDesde = (fecha: string) => {
+  const inicio = new Date(fecha).getTime();
+
+  if (Number.isNaN(inicio)) {
+    return 0;
+  }
+
+  const diferencia = Date.now() - inicio;
+  return Math.max(0, Math.floor(diferencia / 86400000));
+};

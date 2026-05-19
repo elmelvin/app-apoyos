@@ -1,0 +1,48 @@
+.admin-apoyo-editor-page {
+  display: grid;
+  gap: 20px;
+  padding-bottom: 24px;
+}
+
+.admin-apoyo-editor {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-apoyo-editor__intro h3 {
+  margin: 6px 0 0;
+}
+
+.admin-apoyo-editor__intro p {
+  margin: 12px 0 0;
+  color: #607082;
+  line-height: 1.5;
+}
+
+.admin-apoyo-editor__eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: #5f6b7a;
+}
+
+.admin-apoyo-editor__scope {
+  margin: -4px 0 0;
+  color: #365144;
+  font-size: 14px;
+}
+
+.admin-apoyo-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .admin-apoyo-editor__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

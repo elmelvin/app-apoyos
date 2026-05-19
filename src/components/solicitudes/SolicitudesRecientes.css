@@ -1,8 +1,9 @@
 .recent-card {
   background: white;
   padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid #dfe8e2;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(18, 53, 36, 0.07);
 }
 
 .recent-row {
@@ -16,7 +17,7 @@
 }
 
 .recent-row:hover {
-  background: #f7f7f7;
+  background: #f7faf8;
 }
 
 .estado {

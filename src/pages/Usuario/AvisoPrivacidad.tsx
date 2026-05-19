@@ -1,4 +1,5 @@
 import {
+  IonButton,
   IonCard,
   IonCardContent,
   IonContent,
@@ -6,13 +7,16 @@ import {
   IonPage,
 } from "@ionic/react";
 import {
-  lockClosedOutline,
   documentTextOutline,
+  lockClosedOutline,
   shieldCheckmarkOutline,
 } from "ionicons/icons";
+import { useHistory } from "react-router-dom";
 import "./InfoUsuario.css";
 
 const AvisoPrivacidad: React.FC = () => {
+  const history = useHistory();
+
   return (
     <IonPage>
       <IonContent className="info-usuario-page ion-padding">
@@ -26,9 +30,19 @@ const AvisoPrivacidad: React.FC = () => {
               <p className="info-usuario-hero__eyebrow">Privacidad</p>
               <h1>Aviso de privacidad</h1>
               <p className="info-usuario-hero__text">
-                Tu información se utiliza únicamente para gestionar solicitudes de
+                Tu informacion se utiliza unicamente para gestionar solicitudes de
                 apoyo y dar seguimiento al proceso.
               </p>
+            </div>
+
+            <div className="info-usuario-hero__actions">
+              <IonButton
+                fill="outline"
+                color="light"
+                onClick={() => history.push("/usuario/perfil")}
+              >
+                Regresar al perfil
+              </IonButton>
             </div>
           </section>
 
@@ -44,7 +58,7 @@ const AvisoPrivacidad: React.FC = () => {
                   </div>
                   <div>
                     <strong>Datos para tu solicitud</strong>
-                    <span>Se usan para validar identidad, ubicación y documentos.</span>
+                    <span>Se usan para validar identidad, ubicacion y documentos.</span>
                   </div>
                 </div>
 
@@ -54,7 +68,7 @@ const AvisoPrivacidad: React.FC = () => {
                   </div>
                   <div>
                     <strong>Acceso controlado</strong>
-                    <span>Solo personal autorizado debe consultar esta información.</span>
+                    <span>Solo personal autorizado debe consultar esta informacion.</span>
                   </div>
                 </div>
               </div>
@@ -67,7 +81,7 @@ const AvisoPrivacidad: React.FC = () => {
               <h2>Personaliza este contenido</h2>
               <p className="info-usuario-copy">
                 Puedes reemplazar este texto por el aviso oficial de privacidad de tu
-                institución cuando lo tengas listo.
+                institucion cuando lo tengas listo.
               </p>
             </IonCardContent>
           </IonCard>

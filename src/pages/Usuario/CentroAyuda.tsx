@@ -1,4 +1,5 @@
 import {
+  IonButton,
   IonCard,
   IonCardContent,
   IonContent,
@@ -12,9 +13,12 @@ import {
   helpBuoyOutline,
   mailOutline,
 } from "ionicons/icons";
+import { useHistory } from "react-router-dom";
 import "./InfoUsuario.css";
 
 const CentroAyuda: React.FC = () => {
+  const history = useHistory();
+
   return (
     <IonPage>
       <IonContent className="info-usuario-page ion-padding">
@@ -28,9 +32,19 @@ const CentroAyuda: React.FC = () => {
               <p className="info-usuario-hero__eyebrow">Centro de ayuda</p>
               <h1>Estamos para orientarte</h1>
               <p className="info-usuario-hero__text">
-                Aquí encontrarás canales de contacto y orientación básica para el
+                Aqui encontraras canales de contacto y orientacion basica para el
                 proceso de apoyos.
               </p>
+            </div>
+
+            <div className="info-usuario-hero__actions">
+              <IonButton
+                fill="outline"
+                color="light"
+                onClick={() => history.push("/usuario/perfil")}
+              >
+                Regresar al perfil
+              </IonButton>
             </div>
           </section>
 
@@ -56,7 +70,7 @@ const CentroAyuda: React.FC = () => {
                   </div>
                   <div>
                     <strong>Describe tu necesidad con claridad</strong>
-                    <span>Eso ayuda a revisar más rápido tu solicitud.</span>
+                    <span>Eso ayuda a revisar mas rapido tu solicitud.</span>
                   </div>
                 </div>
               </div>
@@ -75,7 +89,7 @@ const CentroAyuda: React.FC = () => {
                   </div>
                   <div>
                     <strong>Telefono</strong>
-                    <span>Acércate al DIF municipal o agrega aquí tu número oficial.</span>
+                    <span>Acercate al DIF municipal o agrega aqui tu numero oficial.</span>
                   </div>
                 </div>
 
@@ -85,7 +99,7 @@ const CentroAyuda: React.FC = () => {
                   </div>
                   <div>
                     <strong>Correo</strong>
-                    <span>Agrega aquí el correo institucional de atención ciudadana.</span>
+                    <span>Agrega aqui el correo institucional de atencion ciudadana.</span>
                   </div>
                 </div>
               </div>

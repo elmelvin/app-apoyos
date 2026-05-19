@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Apoyos DIF</string>
+    <string name="title_activity_main">Apoyos DIF</string>
+    <string name="package_name">com.dif.apoyos</string>
+    <string name="custom_url_scheme">com.dif.apoyos</string>
+</resources>

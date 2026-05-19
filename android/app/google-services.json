@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1088355633029",
+    "project_id": "app-apoyos-dif",
+    "storage_bucket": "app-apoyos-dif.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1088355633029:android:39336b122c05fac8b6e6ec",
+        "android_client_info": {
+          "package_name": "com.dif.apoyos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZOVufXCbHu1Iuq6ARr6W_TvfYOtQ_iao"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,254 @@
+.bienvenida-content {
+  --background:
+    linear-gradient(180deg, rgba(246, 250, 247, 0.95), rgba(237, 245, 240, 0.96)),
+    url("/login-background.png") center / cover no-repeat;
+  --padding-bottom: 24px;
+}
+
+.bienvenida-page {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 24px 18px 34px;
+  color: #123524;
+}
+
+.bienvenida-hero {
+  min-height: min(620px, calc(100vh - 24px));
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.bienvenida-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("/brand-logo.png") center 18% / min(76vw, 520px) no-repeat;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.bienvenida-hero__content {
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.bienvenida-logo {
+  width: 128px;
+  aspect-ratio: 1;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  filter: drop-shadow(0 14px 20px rgba(18, 53, 36, 0.18));
+}
+
+.bienvenida-kicker {
+  margin: 0 0 8px;
+  color: #1f6f46;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bienvenida-hero h1 {
+  max-width: 720px;
+  margin: 0 auto 14px;
+  color: #123524;
+  font-size: clamp(34px, 8vw, 58px);
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.bienvenida-copy {
+  max-width: 680px;
+  margin: 0 auto;
+  color: #41584a;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.bienvenida-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 220px));
+  justify-content: center;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.bienvenida-primary,
+.bienvenida-secondary {
+  min-height: 54px;
+  --border-radius: 12px;
+  font-weight: 700;
+  text-transform: none;
+}
+
+.bienvenida-primary {
+  --background: #1f6f46;
+  --background-hover: #18563a;
+  --box-shadow: 0 14px 24px rgba(31, 111, 70, 0.22);
+}
+
+.bienvenida-secondary {
+  --border-color: #1f6f46;
+  --color: #1f6f46;
+  --background: rgba(255, 255, 255, 0.72);
+}
+
+.bienvenida-section,
+.bienvenida-steps {
+  margin-top: 18px;
+  padding: 22px 0;
+}
+
+.bienvenida-section__heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.bienvenida-section__heading ion-icon {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #e5f3eb;
+  color: #1f6f46;
+}
+
+.bienvenida-section__heading p {
+  margin: 0 0 4px;
+  color: #5f6b7a;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bienvenida-section__heading h2,
+.bienvenida-steps h2 {
+  margin: 0;
+  color: #123524;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.bienvenida-benefits,
+.bienvenida-support-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bienvenida-benefits div,
+.bienvenida-support {
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid #dce6de;
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: 0 10px 28px rgba(18, 53, 36, 0.08);
+}
+
+.bienvenida-benefits strong,
+.bienvenida-benefits span {
+  display: block;
+}
+
+.bienvenida-benefits strong,
+.bienvenida-support h3 {
+  color: #123524;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.bienvenida-benefits span,
+.bienvenida-support p {
+  margin: 8px 0 0;
+  color: #4b6254;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.bienvenida-support ion-icon {
+  width: 32px;
+  height: 32px;
+  color: #1f6f46;
+}
+
+.bienvenida-support h3 {
+  margin: 14px 0 0;
+}
+
+.bienvenida-steps {
+  margin-bottom: 12px;
+}
+
+.bienvenida-steps ol {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: pasos;
+}
+
+.bienvenida-steps li {
+  counter-increment: pasos;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #dce6de;
+  color: #2f4638;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.bienvenida-steps li::before {
+  content: counter(pasos);
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #1f6f46;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+@media (max-width: 760px) {
+  .bienvenida-page {
+    padding-inline: 16px;
+  }
+
+  .bienvenida-hero {
+    min-height: auto;
+    padding: 30px 0 18px;
+  }
+
+  .bienvenida-logo {
+    width: 112px;
+  }
+
+  .bienvenida-copy {
+    font-size: 17px;
+  }
+
+  .bienvenida-actions,
+  .bienvenida-benefits,
+  .bienvenida-support-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bienvenida-section {
+    padding: 18px 0;
+  }
+}

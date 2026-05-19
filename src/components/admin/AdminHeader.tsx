@@ -19,6 +19,7 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
     { label: "Dashboard", path: "/admin/dashboard" },
     { label: "Solicitudes", path: "/admin/solicitudes" },
     { label: "Apoyos", path: "/admin/apoyos" },
+    { label: "Perfil", path: "/admin/perfil" },
   ];
 
   const cerrarSesion = async () => {
@@ -38,7 +39,10 @@ const AdminHeader = ({ title, subtitle }: AdminHeaderProps) => {
       <div className="admin-header__toolbar">
         <div className="admin-header__actions">
           {acciones.map((accion) => {
-            const activa = location.pathname === accion.path;
+            const activa =
+              accion.path === "/admin/apoyos"
+                ? location.pathname.startsWith("/admin/apoyos")
+                : location.pathname === accion.path;
 
             return (
               <IonButton

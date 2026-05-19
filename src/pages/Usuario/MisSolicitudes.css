@@ -1,0 +1,177 @@
+.mis-solicitudes-page {
+  --background:
+    radial-gradient(circle at top left, rgba(88, 177, 116, 0.12), transparent 26%),
+    linear-gradient(180deg, #f7faf8 0%, #eef4ef 100%);
+}
+
+.mis-solicitudes-layout {
+  display: grid;
+  gap: 16px;
+  padding: 12px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-top: calc(4px + var(--ion-safe-area-top, env(safe-area-inset-top, 0px)));
+  padding-bottom: 22px;
+}
+
+.mis-solicitudes-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at top right, rgba(88, 177, 116, 0.2), transparent 30%),
+    linear-gradient(135deg, #123524 0%, #1b4332 55%, #2d6a4f 100%);
+  color: #f3fbf5;
+  box-shadow: 0 14px 28px rgba(18, 53, 36, 0.14);
+}
+
+.mis-solicitudes-hero__topbar {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+}
+
+.mis-solicitudes-hero__eyebrow {
+  margin: 0 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.74rem;
+  color: rgba(243, 251, 245, 0.76);
+}
+
+.mis-solicitudes-hero__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mis-solicitudes-hero__title ion-icon {
+  font-size: 1.25rem;
+}
+
+.mis-solicitudes-hero h1 {
+  margin: 0;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+}
+
+.mis-solicitudes-hero__content {
+  padding-right: 56px;
+}
+
+.mis-solicitudes-hero p {
+  margin: 6px 0 0;
+  max-width: 520px;
+  color: rgba(243, 251, 245, 0.88);
+  line-height: 1.4;
+  font-size: 0.92rem;
+}
+
+.mis-solicitudes-hero ion-button {
+  margin: 0;
+  --border-radius: 12px;
+  --border-color: rgba(255, 255, 255, 0.28);
+  --color: #f3fbf5;
+  min-height: 42px;
+}
+
+.mis-solicitudes-hero__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mis-solicitudes-panel {
+  padding: 18px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at top right, rgba(44, 123, 229, 0.08), transparent 24%),
+    #ffffff;
+  border: 1px solid #dbe6dd;
+  box-shadow: 0 10px 24px rgba(18, 53, 36, 0.07);
+}
+
+.mis-solicitudes-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mis-solicitudes-panel__eyebrow {
+  margin: 0;
+  color: #5f6b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.76rem;
+}
+
+.mis-solicitudes-panel__header h2 {
+  margin: 6px 0 0;
+  color: #123524;
+  font-size: 1.05rem;
+}
+
+.mis-solicitudes-panel__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: #f5f8f6;
+  color: #5f6b7a;
+  font-size: 0.78rem;
+}
+
+.mis-solicitudes-list {
+  display: grid;
+  gap: 12px;
+}
+
+.mis-solicitudes-empty {
+  padding: 24px 0 10px;
+}
+
+@media (max-width: 768px) {
+  .mis-solicitudes-hero {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .mis-solicitudes-panel__header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .mis-solicitudes-layout {
+    padding: 10px;
+    padding-top: calc(4px + var(--ion-safe-area-top, env(safe-area-inset-top, 0px)));
+    gap: 14px;
+  }
+
+  .mis-solicitudes-hero,
+  .mis-solicitudes-panel {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .mis-solicitudes-panel__meta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mis-solicitudes-hero__topbar {
+    top: 14px;
+    right: 14px;
+  }
+
+  .mis-solicitudes-hero__content {
+    padding-right: 48px;
+  }
+}

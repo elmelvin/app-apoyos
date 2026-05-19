@@ -20,8 +20,11 @@ const ProtectedRoute: React.FC<Props> = ({
 
   useEffect(() => {
     const checkUser = async () => {
-      const { data } = await supabase.auth.getUser();
-      if (!data.user) {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
         setAuthorized(false);
         return;
       }
@@ -34,7 +37,7 @@ const ProtectedRoute: React.FC<Props> = ({
       const { data: profile, error } = await supabase
       .from("perfiles")
       .select("rol")
-      .eq("user_id", data.user.id) 
+      .eq("user_id", session.user.id) 
       .maybeSingle();              
 
       if (error) {

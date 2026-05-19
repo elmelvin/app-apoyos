@@ -5,20 +5,19 @@ import {
   IonCardHeader,
   IonCardTitle,
   IonContent,
-  IonHeader,
   IonIcon,
   IonItem,
   IonLabel,
   IonPage,
   IonSelect,
   IonSelectOption,
-  IonTitle,
-  IonToolbar,
   useIonViewWillEnter,
 } from "@ionic/react";
 import { documentText, helpCircle, personCircle } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
+import UsuarioTopBar from "../../components/usuario/UsuarioTopBar";
+import AppFeedback, { AppFeedbackState } from "../../components/utilidades/AppFeedback";
 import { supabase } from "../../services/supabaseClient";
 import "./HomeUsuario.css";
 
@@ -37,18 +36,15 @@ interface Comunidad {
 const HomeUsuario: React.FC = () => {
   const history = useHistory();
   const location = useLocation<{ editarUbicacion?: boolean }>();
-
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [tipos, setTipos] = useState<string[]>([]);
   const [comunidades, setComunidades] = useState<Comunidad[]>([]);
-
   const [municipioId, setMunicipioId] = useState<string>("");
   const [tipo, setTipo] = useState<string>("");
   const [comunidadId, setComunidadId] = useState<string>("");
-
   const [perfilCompleto, setPerfilCompleto] = useState<boolean>(false);
   const [cargandoUbicacion, setCargandoUbicacion] = useState<boolean>(true);
-
+  const [feedback, setFeedback] = useState<AppFeedbackState | null>(null);
   const modoEdicion = location.state?.editarUbicacion === true;
 
   useEffect(() => {
@@ -148,7 +144,11 @@ const HomeUsuario: React.FC = () => {
 
   const guardarPerfil = async () => {
     if (!municipioId || !comunidadId) {
-      alert("Selecciona municipio y comunidad");
+      setFeedback({
+        type: "warning",
+        title: "Ubicacion incompleta",
+        message: "Selecciona tu municipio y comunidad para continuar.",
+      });
       return;
     }
 
@@ -157,7 +157,11 @@ const HomeUsuario: React.FC = () => {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("Usuario no autenticado");
+      setFeedback({
+        type: "error",
+        title: "Sesion no disponible",
+        message: "Inicia sesion nuevamente para guardar tu ubicacion.",
+      });
       return;
     }
 
@@ -173,43 +177,48 @@ const HomeUsuario: React.FC = () => {
 
     if (error) {
       console.log(error);
-      alert("Error guardando perfil");
+      setFeedback({
+        type: "error",
+        title: "No se pudo guardar",
+        message: "Revisa tu conexion e intenta guardar la ubicacion otra vez.",
+      });
       return;
     }
 
     setPerfilCompleto(true);
-    alert("Perfil guardado correctamente");
+    setFeedback({
+      type: "success",
+      title: modoEdicion ? "Ubicacion actualizada" : "Perfil listo",
+      message: modoEdicion
+        ? "Tus datos de ubicacion se actualizaron correctamente."
+        : "Guardamos tu ubicacion. Ya puedes consultar los apoyos disponibles.",
+    });
 
     if (modoEdicion) {
-      history.replace("/usuario/perfil");
+      window.setTimeout(() => history.replace("/usuario/perfil"), 700);
     }
   };
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Portal de Apoyos</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-
       <IonContent fullscreen className="home-bg">
         <div className="home-layout">
           <section className="home-hero">
-            <div className="home-hero__icon">
-              <IonIcon icon={personCircle} />
+            <div className="home-hero__topbar">
+              <UsuarioTopBar variant="hero" />
             </div>
 
             <div className="home-hero__content">
               <p className="home-hero__eyebrow">Portal ciudadano</p>
-              <h1>Bienvenido</h1>
-              <p className="home-hero__text">
-                Gestiona tus apoyos y consulta tus solicitudes
-              </p>
+              <div className="home-hero__title">
+                <IonIcon icon={personCircle} />
+                <h1>Portal de apoyos</h1>
+              </div>
+              <p className="home-hero__text">Gestiona apoyos y consulta tus solicitudes.</p>
 
               <div className="home-hero__chips">
                 <span>{perfilCompleto ? "Perfil listo" : "Falta completar perfil"}</span>
-                <span>{modoEdicion ? "Editando ubicación" : "Accesos rápidos"}</span>
+                <span>{modoEdicion ? "Editando ubicacion" : "Accesos rapidos"}</span>
               </div>
             </div>
           </section>
@@ -217,7 +226,7 @@ const HomeUsuario: React.FC = () => {
           {(!perfilCompleto || modoEdicion) && !cargandoUbicacion && (
             <IonCard className="home-card home-card--location">
               <IonCardHeader>
-                <p className="home-card__eyebrow">Ubicación</p>
+                <p className="home-card__eyebrow">Ubicacion</p>
                 <IonCardTitle>
                   {modoEdicion ? "Edita tu ubicacion" : "Selecciona tu ubicacion"}
                 </IonCardTitle>
@@ -225,7 +234,7 @@ const HomeUsuario: React.FC = () => {
 
               <IonCardContent>
                 <p className="home-location__hint">
-                  Esta información nos ayuda a mostrarte apoyos y seguimiento según tu
+                  Esta informacion nos ayuda a mostrarte apoyos y seguimiento segun tu
                   comunidad.
                 </p>
 
@@ -252,7 +261,7 @@ const HomeUsuario: React.FC = () => {
                     </IonSelect>
                   </IonItem>
 
-                  {tipos.length > 0 && (
+                  {tipos.length > 0 ? (
                     <IonItem className="home-select-item">
                       <IonLabel>Tipo de localidad</IonLabel>
                       <IonSelect
@@ -272,9 +281,9 @@ const HomeUsuario: React.FC = () => {
                         ))}
                       </IonSelect>
                     </IonItem>
-                  )}
+                  ) : null}
 
-                  {comunidades.length > 0 && (
+                  {comunidades.length > 0 ? (
                     <IonItem className="home-select-item">
                       <IonLabel>Comunidad</IonLabel>
                       <IonSelect
@@ -289,7 +298,7 @@ const HomeUsuario: React.FC = () => {
                         ))}
                       </IonSelect>
                     </IonItem>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="home-location__actions">
@@ -297,7 +306,7 @@ const HomeUsuario: React.FC = () => {
                     {modoEdicion ? "Actualizar ubicacion" : "Guardar ubicacion"}
                   </IonButton>
 
-                  {modoEdicion && (
+                  {modoEdicion ? (
                     <IonButton
                       expand="block"
                       fill="clear"
@@ -305,13 +314,13 @@ const HomeUsuario: React.FC = () => {
                     >
                       Cancelar
                     </IonButton>
-                  )}
+                  ) : null}
                 </div>
               </IonCardContent>
             </IonCard>
           )}
 
-          {perfilCompleto && !modoEdicion && (
+          {perfilCompleto && !modoEdicion ? (
             <section className="home-actions">
               <IonCard className="home-card home-card--primary">
                 <IonCardHeader>
@@ -323,8 +332,8 @@ const HomeUsuario: React.FC = () => {
 
                 <IonCardContent>
                   <p className="home-card__text">
-                    Revisa los apoyos disponibles y comienza una nueva solicitud
-                    cuando lo necesites.
+                    Revisa los apoyos disponibles y comienza una nueva solicitud cuando
+                    lo necesites.
                   </p>
 
                   <div className="home-card__actions">
@@ -366,8 +375,10 @@ const HomeUsuario: React.FC = () => {
                 </IonCardContent>
               </IonCard>
             </section>
-          )}
+          ) : null}
         </div>
+
+        <AppFeedback feedback={feedback} onClose={() => setFeedback(null)} />
       </IonContent>
     </IonPage>
   );

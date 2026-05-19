@@ -23,6 +23,11 @@
   gap: 18px;
 }
 
+.admin-apoyos-entry {
+  display: grid;
+  gap: 18px;
+}
+
 .admin-apoyos__eyebrow {
   margin: 0;
   text-transform: uppercase;
@@ -49,6 +54,23 @@
   flex-wrap: wrap;
 }
 
+.admin-apoyos-entry__details {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f5f8f6;
+  border: 1px solid #e1e9e3;
+  color: #365144;
+}
+
+.admin-apoyos-entry__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .admin-apoyos__selected-scope {
   margin: -4px 0 0;
   color: #365144;
@@ -69,7 +91,7 @@
 
 .admin-apoyo-item {
   padding: 18px;
-  border-radius: 18px;
+  border-radius: 8px;
   border: 1px solid #dce6de;
   background: #fbfdfb;
   display: grid;
@@ -118,7 +140,7 @@
 
 .admin-apoyo-item__requisitos {
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: 8px;
   background: #f5f8f6;
   border: 1px solid #e1e9e3;
 }
@@ -154,7 +176,7 @@
   align-items: center;
   gap: 16px;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: 8px;
   background: #f8fbf9;
   border: 1px solid #dde8df;
 }
@@ -178,6 +200,7 @@
 
 @media (max-width: 640px) {
   .admin-apoyos-form__actions,
+  .admin-apoyos-entry__actions,
   .admin-apoyo-item__header,
   .admin-apoyo-item__actions,
   .admin-apoyo-item__status-row {

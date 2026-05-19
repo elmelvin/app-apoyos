@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
+import { getFriendlyDatabaseErrorMessage } from "../utils/databaseErrorMessages";
 
 export type Documento = {
   url: string;
@@ -12,6 +13,7 @@ export type SolicitudAdmin = {
   telefono: string | null;
   direccion: string | null;
   mensaje: string | null;
+  comentario_admin: string | null;
   estado: string | null;
   created_at: string;
   usuario_id: string;
@@ -57,6 +59,7 @@ export const useAdminSolicitudes = () => {
         telefono,
         direccion,
         mensaje,
+        comentario_admin,
         estado,
         created_at,
         apoyo_id,
@@ -82,6 +85,7 @@ export const useAdminSolicitudes = () => {
           telefono,
           direccion,
           mensaje,
+          comentario_admin,
           estado,
           created_at,
           municipio_id,
@@ -167,13 +171,63 @@ export const useAdminSolicitudes = () => {
       setUpdatingId(null);
       return {
         ok: false,
-        error: error.message,
+        error: getFriendlyDatabaseErrorMessage(
+          error,
+          "No se pudo actualizar el estado de la solicitud."
+        ),
       };
     }
 
     setSolicitudes((actuales) =>
       actuales.map((solicitud) =>
         solicitud.id === solicitudId ? { ...solicitud, estado } : solicitud
+      )
+    );
+
+    const { error: pushError } = await supabase.functions.invoke("send-push", {
+      body: {
+        solicitudId,
+        estado,
+      },
+    });
+
+    if (pushError) {
+      console.log("No se pudo enviar la notificacion push.", pushError.message);
+    }
+
+    setUpdatingId(null);
+    return { ok: true };
+  }, []);
+
+  const actualizarComentario = useCallback(async (
+    solicitudId: string,
+    comentario: string
+  ): Promise<ActualizarEstadoResultado> => {
+    setUpdatingId(solicitudId);
+
+    const comentarioNormalizado = comentario.trim() || null;
+    const { error } = await supabase
+      .from("solicitudes")
+      .update({ comentario_admin: comentarioNormalizado })
+      .eq("id", solicitudId);
+
+    if (error) {
+      console.log(error);
+      setUpdatingId(null);
+      return {
+        ok: false,
+        error: getFriendlyDatabaseErrorMessage(
+          error,
+          "No se pudo guardar el comentario de la solicitud."
+        ),
+      };
+    }
+
+    setSolicitudes((actuales) =>
+      actuales.map((solicitud) =>
+        solicitud.id === solicitudId
+          ? { ...solicitud, comentario_admin: comentarioNormalizado }
+          : solicitud
       )
     );
 
@@ -191,6 +245,7 @@ export const useAdminSolicitudes = () => {
     updatingId,
     cargarSolicitudes,
     actualizarEstado,
+    actualizarComentario,
   };
 };
 

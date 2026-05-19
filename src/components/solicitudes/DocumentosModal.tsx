@@ -1,4 +1,5 @@
-import { IonButton } from "@ionic/react";
+import { IonButton, IonIcon } from "@ionic/react";
+import { arrowDownOutline, closeOutline, documentTextOutline, eyeOutline } from "ionicons/icons";
 import "./DocumentosModal.css";
 
 type Documento = {
@@ -40,29 +41,49 @@ const DocumentosModal = ({ show, setShow, documentos }: Props) => {
     <div className="docs-modal__backdrop">
       <div className="docs-modal__content">
         <div className="docs-modal__header">
-          <div>
+          <div className="docs-modal__header-copy">
             <p className="docs-modal__eyebrow">Archivos adjuntos</p>
             <h2>Documentos de la solicitud</h2>
+            <p className="docs-modal__summary">
+              {documentosSeguros.length > 0
+                ? `${documentosSeguros.length} archivo${documentosSeguros.length === 1 ? "" : "s"} disponible${documentosSeguros.length === 1 ? "" : "s"} para revision.`
+                : "No hay archivos cargados para esta solicitud."}
+            </p>
           </div>
 
           <IonButton fill="clear" color="medium" onClick={() => setShow(false)}>
-            Cerrar
+            <IonIcon slot="icon-only" icon={closeOutline} />
           </IonButton>
         </div>
 
         {documentosSeguros.length === 0 ? (
-          <p className="docs-modal__empty">
-            No hay documentos asociados a esta solicitud.
-          </p>
+          <div className="docs-modal__empty">
+            <div className="docs-modal__empty-icon">
+              <IonIcon icon={documentTextOutline} />
+            </div>
+            <p>No hay documentos asociados a esta solicitud.</p>
+          </div>
         ) : (
           <div className="docs-modal__list">
             {documentosSeguros.map((doc, index) => (
               <div key={`${doc.tipo_documento}-${index}`} className="docs-modal__row">
-                <div>
-                  <strong>{doc.tipo_documento}</strong>
-                  <p className="docs-modal__hint">
-                    Archivo disponible para consulta o descarga.
-                  </p>
+                <div className="docs-modal__file-main">
+                  <div className="docs-modal__file-icon">
+                    <IonIcon icon={documentTextOutline} />
+                  </div>
+
+                  <div>
+                    <div className="docs-modal__file-top">
+                      <strong>{formatearTipoDocumento(doc.tipo_documento)}</strong>
+                      <span className="docs-modal__file-badge">
+                        .{obtenerExtension(doc.url).toUpperCase()}
+                      </span>
+                    </div>
+
+                    <p className="docs-modal__hint">
+                      Archivo disponible para consulta o descarga.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="docs-modal__actions">
@@ -71,9 +92,11 @@ const DocumentosModal = ({ show, setShow, documentos }: Props) => {
                     size="small"
                     onClick={() => window.open(doc.url, "_blank", "noopener,noreferrer")}
                   >
-                    Abrir
+                    <IonIcon slot="start" icon={eyeOutline} />
+                    Ver
                   </IonButton>
                   <IonButton size="small" onClick={() => descargarDocumento(doc, index)}>
+                    <IonIcon slot="start" icon={arrowDownOutline} />
                     Descargar
                   </IonButton>
                 </div>
@@ -91,3 +114,10 @@ const DocumentosModal = ({ show, setShow, documentos }: Props) => {
 };
 
 export default DocumentosModal;
+
+const formatearTipoDocumento = (tipo: string) =>
+  (tipo || "Documento")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letra) => letra.toUpperCase());
