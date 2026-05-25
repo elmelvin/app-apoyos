@@ -23,8 +23,8 @@ import Card from "../../components/utilidades/Card";
 import Loader from "../../components/utilidades/Loader";
 import { changeUserPassword } from "../../services/authService";
 import { supabase } from "../../services/supabaseClient";
-import { getFriendlyAuthErrorMessage } from "../../utils/authErrorMessages";
-import { getFriendlyDatabaseErrorMessage } from "../../utils/databaseErrorMessages";
+import { getFriendlyAuthErrorMessage } from "../../utils/auth";
+import { getFriendlyDatabaseErrorMessage } from "../../utils/errors";
 import "./AdminPerfil.css";
 
 type AdminCuenta = {

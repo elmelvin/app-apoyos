@@ -30,7 +30,7 @@ import {
   getApoyos,
 } from "../../services/apoyosService";
 import { supabase } from "../../services/supabaseClient";
-import { guardarApoyoSeleccionado } from "../../utils/apoyoSeleccionadoStorage";
+import { guardarApoyoSeleccionado } from "../../utils/storage";
 import "./ListaApoyos.css";
 
 const DOCUMENTO_EVIDENCIA_SOLICITUD = "Evidencia de la solicitud";

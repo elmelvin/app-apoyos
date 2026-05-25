@@ -11,8 +11,8 @@ import { IonIcon } from "@ionic/react";
 import { lockClosedOutline, mailOutline } from "ionicons/icons";
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
-import { requestPasswordReset } from "../services/authService";
-import { getFriendlyAuthErrorMessage } from "../utils/authErrorMessages";
+import { requestPasswordReset } from "../../services/authService";
+import { getFriendlyAuthErrorMessage } from "../../utils/auth";
 import "./Login.css";
 
 const ForgotPassword: React.FC = () => {

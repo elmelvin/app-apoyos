@@ -2,8 +2,8 @@ import { IonButton, IonContent, IonIcon, IonPage, IonSpinner } from "@ionic/reac
 import { alertCircleOutline, checkmarkCircleOutline } from "ionicons/icons";
 import { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
-import { getFriendlyAuthErrorMessage } from "../utils/authErrorMessages";
+import { supabase } from "../../services/supabaseClient";
+import { getFriendlyAuthErrorMessage } from "../../utils/auth";
 import "./Login.css";
 
 type ConfirmationStatus = "loading" | "success" | "error";

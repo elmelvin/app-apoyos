@@ -39,7 +39,7 @@ import { supabase } from "../../services/supabaseClient";
 import {
   leerApoyoSeleccionado,
   limpiarApoyoSeleccionado,
-} from "../../utils/apoyoSeleccionadoStorage";
+} from "../../utils/storage";
 import "./FormularioSolicitud.css";
 
 type FormularioLocationState = {

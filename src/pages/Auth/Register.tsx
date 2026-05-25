@@ -18,13 +18,13 @@ import {
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { supabase } from "../../services/supabaseClient";
-import { getAuthRedirectTo } from "../../utils/authRedirect";
-import { getFriendlyAuthErrorMessage } from "../../utils/authErrorMessages";
 import {
+  getAuthRedirectTo,
+  getFriendlyAuthErrorMessage,
   getPasswordValidationMessage,
   isPasswordValid,
   passwordRules,
-} from "../../utils/passwordValidation";
+} from "../../utils/auth";
 import "./Register.css";
 
 const Register: React.FC = () => {

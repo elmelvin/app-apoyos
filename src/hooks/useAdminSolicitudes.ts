@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../services/supabaseClient";
-import { getFriendlyDatabaseErrorMessage } from "../utils/databaseErrorMessages";
+import { getFriendlyDatabaseErrorMessage } from "../utils/errors";
 
 export type Documento = {
   url: string;

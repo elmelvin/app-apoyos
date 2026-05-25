@@ -11,13 +11,13 @@ import { IonIcon } from "@ionic/react";
 import { lockClosedOutline } from "ionicons/icons";
 import { useMemo, useState } from "react";
 import { useHistory } from "react-router-dom";
-import { updateRecoveredPassword } from "../services/authService";
-import { getFriendlyAuthErrorMessage } from "../utils/authErrorMessages";
+import { updateRecoveredPassword } from "../../services/authService";
 import {
+  getFriendlyAuthErrorMessage,
   getPasswordValidationMessage,
   isPasswordValid,
   passwordRules,
-} from "../utils/passwordValidation";
+} from "../../utils/auth";
 import "./Login.css";
 
 const ResetPassword: React.FC = () => {

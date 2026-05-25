@@ -1,6 +1,5 @@
 import { supabase } from "./supabaseClient";
-import { getAuthRedirectTo } from "../utils/authRedirect";
-import { getFriendlyAuthErrorMessage } from "../utils/authErrorMessages";
+import { getAuthRedirectTo, getFriendlyAuthErrorMessage } from "../utils/auth";
 
 export const getHomeRouteByRole = (rol?: string | null) =>
   rol === "admin" ? "/admin/dashboard" : "/usuario/home";

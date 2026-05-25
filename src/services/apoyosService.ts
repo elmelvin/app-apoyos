@@ -1,5 +1,5 @@
 import { supabase } from "./supabaseClient";
-import { getFriendlyDatabaseErrorMessage } from "../utils/databaseErrorMessages";
+import { getFriendlyDatabaseErrorMessage } from "../utils/errors";
 
 export interface Apoyo {
   id: string;

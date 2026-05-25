@@ -3,7 +3,7 @@ import { supabase } from "../services/supabaseClient";
 import {
   getNotificationInboxKey,
   getNotificationSnapshotKey,
-} from "../utils/notificationPreferences";
+} from "../utils/notifications";
 
 export type UserNotification = {
   id: string;

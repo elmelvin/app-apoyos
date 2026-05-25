@@ -18,8 +18,8 @@ import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   getNotificationPreferencesKey,
   NotificationPreferences,
-} from "../../utils/notificationPreferences";
-import { getFriendlyAuthErrorMessage } from "../../utils/authErrorMessages";
+} from "../../utils/notifications";
+import { getFriendlyAuthErrorMessage } from "../../utils/auth";
 import "./Perfil.css";
 
 interface RelacionNombre {

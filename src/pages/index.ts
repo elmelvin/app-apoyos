@@ -1,0 +1,12 @@
+export { default as Login } from "./Auth/Login";
+export { default as SessionEntry } from "./Auth/SessionEntry";
+export { default as ForgotPassword } from "./Auth/ForgotPassword";
+export { default as ResetPassword } from "./Auth/ResetPassword";
+export { default as EmailConfirmed } from "./Auth/EmailConfirmed";
+export { default as Register } from "./Auth/Register";
+export { default as DashboardAdmin } from "./Admin/DashboardAdmin";
+export { default as AdminSolicitudes } from "./Admin/AdminSolicitudes";
+export { default as AdminApoyos } from "./Admin/AdminApoyos";
+export { default as AdminApoyoEditor } from "./Admin/AdminApoyoEditor";
+export { default as AdminPerfil } from "./Admin/AdminPerfil";
+export { default as TabsUsuario } from "./Usuario/TabsUsuario";

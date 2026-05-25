@@ -16,8 +16,8 @@ import {
   getHomeRouteByRole,
   getProfile,
   loginUser,
-} from "../services/authService";
-import { getFriendlyAuthErrorMessage } from "../utils/authErrorMessages";
+} from "../../services/authService";
+import { getFriendlyAuthErrorMessage } from "../../utils/auth";
 import "./Login.css";
 
 const Login: React.FC = () => {

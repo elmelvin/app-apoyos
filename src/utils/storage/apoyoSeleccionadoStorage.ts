@@ -1,4 +1,4 @@
-import { ApoyoSeleccionadoPayload } from "../services/apoyosService";
+import { ApoyoSeleccionadoPayload } from "../../services/apoyosService";
 
 const APOYO_SELECCIONADO_STORAGE_KEY = "app-apoyos:apoyo-seleccionado";
 

@@ -1,8 +1,8 @@
 import { IonContent, IonPage } from "@ionic/react";
 import { useEffect, useState } from "react";
 import { Redirect } from "react-router-dom";
-import Loader from "../components/utilidades/Loader";
-import { getActiveSessionHomeRoute } from "../services/authService";
+import Loader from "../../components/utilidades/Loader";
+import { getActiveSessionHomeRoute } from "../../services/authService";
 import Bienvenida from "./Bienvenida";
 
 const SessionEntry: React.FC = () => {

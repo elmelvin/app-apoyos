@@ -25,7 +25,7 @@ import {
   shieldCheckmarkOutline,
 } from "ionicons/icons";
 import UsuarioTopBar from "./UsuarioTopBar";
-import { NotificationPreferences } from "../../utils/notificationPreferences";
+import { NotificationPreferences } from "../../utils/notifications";
 
 export type CuentaResumen = {
   nombre: string;

@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = requiredEnv("SUPABASE_URL");
     const supabaseAnonKey = requiredEnv("SUPABASE_ANON_KEY");
     const supabaseServiceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
-    const firebaseServiceAccount = getFirebaseServiceAccount();
+    const firebaseServiceAccount = getOptionalFirebaseServiceAccount();
 
     const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
 
     const { data: solicitud, error: solicitudError } = await supabaseAdmin
       .from("solicitudes")
-      .select("id, usuario_id, apoyo_nombre, estado")
+      .select("id, usuario_id, apoyo_nombre, estado, comentario_admin")
       .eq("id", solicitudId)
       .maybeSingle();
 
@@ -81,6 +81,17 @@ Deno.serve(async (req) => {
       console.log("send-push: solicitud no encontrada", { solicitudId });
       return jsonResponse({ error: "Solicitud no encontrada." }, 404);
     }
+
+    const title = buildTitle(estado);
+    const bodyText = buildMessage(solicitud.apoyo_nombre, estado);
+    const emailResult = await sendStatusEmailIfConfigured(supabaseAdmin, {
+      userId: solicitud.usuario_id,
+      apoyoNombre: solicitud.apoyo_nombre,
+      estado,
+      comentarioAdmin: solicitud.comentario_admin,
+      title,
+      bodyText,
+    });
 
     const { data: tokens, error: tokensError } = await supabaseAdmin
       .from("push_tokens")
@@ -96,7 +107,18 @@ Deno.serve(async (req) => {
         solicitudId,
         usuarioId: solicitud.usuario_id,
       });
-      return jsonResponse({ sent: 0, reason: "El usuario no tiene tokens push guardados." });
+      return jsonResponse({
+        push: { sent: 0, reason: "El usuario no tiene tokens push guardados." },
+        email: emailResult,
+      });
+    }
+
+    if (!firebaseServiceAccount) {
+      console.log("send-push: Firebase no configurado, solo correo", { solicitudId });
+      return jsonResponse({
+        push: { sent: 0, reason: "Firebase no configurado." },
+        email: emailResult,
+      });
     }
 
     console.log("send-push: enviando a Firebase", {
@@ -106,8 +128,6 @@ Deno.serve(async (req) => {
     });
 
     const accessToken = await getFirebaseAccessToken(firebaseServiceAccount);
-    const title = buildTitle(estado);
-    const bodyText = buildMessage(solicitud.apoyo_nombre, estado);
 
     const results = await Promise.allSettled(
       uniqueTokens.map((token) =>
@@ -137,7 +157,7 @@ Deno.serve(async (req) => {
       failures,
     });
 
-    return jsonResponse({ sent, failed });
+    return jsonResponse({ push: { sent, failed }, email: emailResult });
   } catch (error) {
     console.log(error);
     const message = error instanceof Error ? error.message : "Error inesperado.";
@@ -160,8 +180,12 @@ const requiredEnv = (key: string) => {
   return value;
 };
 
-const getFirebaseServiceAccount = () => {
-  const raw = requiredEnv("FIREBASE_SERVICE_ACCOUNT");
+const optionalEnv = (key: string) => Deno.env.get(key)?.trim() || "";
+
+const getOptionalFirebaseServiceAccount = () => {
+  const raw = optionalEnv("FIREBASE_SERVICE_ACCOUNT");
+
+  if (!raw) return null;
 
   try {
     const parsed = JSON.parse(raw) as FirebaseServiceAccount;
@@ -328,3 +352,121 @@ const buildMessage = (apoyoNombre: string | null, estado: string) => {
 
   return `Tu solicitud para ${apoyo} fue actualizada.`;
 };
+
+const sendStatusEmailIfConfigured = async (
+  supabaseAdmin: ReturnType<typeof createClient>,
+  payload: {
+    userId: string;
+    apoyoNombre: string | null;
+    estado: string;
+    comentarioAdmin?: string | null;
+    title: string;
+    bodyText: string;
+  }
+) => {
+  const resendApiKey = optionalEnv("RESEND_API_KEY");
+  const from = optionalEnv("MAIL_FROM") || optionalEnv("EMAIL_FROM");
+
+  if (!resendApiKey || !from) {
+    return { sent: false, reason: "Correo no configurado. Define RESEND_API_KEY y MAIL_FROM." };
+  }
+
+  const { data, error } = await supabaseAdmin.auth.admin.getUserById(payload.userId);
+
+  if (error) throw error;
+
+  const to = data.user?.email;
+
+  if (!to) {
+    return { sent: false, reason: "El usuario no tiene correo registrado." };
+  }
+
+  const html = buildEmailHtml(payload);
+  const text = buildEmailText(payload);
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to,
+      subject: payload.title,
+      html,
+      text,
+    }),
+  });
+
+  const responsePayload = await response.json();
+
+  if (!response.ok) {
+    throw new Error(`Resend error: ${JSON.stringify(responsePayload)}`);
+  }
+
+  return { sent: true, to };
+};
+
+const buildEmailText = (payload: {
+  apoyoNombre: string | null;
+  estado: string;
+  comentarioAdmin?: string | null;
+  bodyText: string;
+}) => {
+  const lineas = [
+    payload.bodyText,
+    "",
+    `Apoyo: ${payload.apoyoNombre || "No especificado"}`,
+    `Estado: ${formatEstado(payload.estado)}`,
+  ];
+
+  if (payload.comentarioAdmin) {
+    lineas.push("", `Comentario del administrador: ${payload.comentarioAdmin}`);
+  }
+
+  lineas.push("", "Puedes revisar el detalle desde la app Apoyos DIF.");
+
+  return lineas.join("\n");
+};
+
+const buildEmailHtml = (payload: {
+  apoyoNombre: string | null;
+  estado: string;
+  comentarioAdmin?: string | null;
+  title: string;
+  bodyText: string;
+}) => `
+  <div style="font-family: Arial, sans-serif; color: #172033; line-height: 1.5;">
+    <h2 style="color: #123524; margin-bottom: 8px;">${escapeHtml(payload.title)}</h2>
+    <p>${escapeHtml(payload.bodyText)}</p>
+    <div style="margin: 18px 0; padding: 14px; border: 1px solid #dfe8e2; border-radius: 8px; background: #f7faf8;">
+      <p style="margin: 0 0 8px;"><strong>Apoyo:</strong> ${escapeHtml(payload.apoyoNombre || "No especificado")}</p>
+      <p style="margin: 0;"><strong>Estado:</strong> ${escapeHtml(formatEstado(payload.estado))}</p>
+    </div>
+    ${
+      payload.comentarioAdmin
+        ? `<div style="margin: 18px 0; padding: 14px; border: 1px solid #f0d795; border-radius: 8px; background: #fff8e6;">
+            <p style="margin: 0 0 6px;"><strong>Comentario del administrador</strong></p>
+            <p style="margin: 0;">${escapeHtml(payload.comentarioAdmin)}</p>
+          </div>`
+        : ""
+    }
+    <p style="color: #5f6b7a;">Puedes revisar el detalle desde la app Apoyos DIF.</p>
+  </div>
+`;
+
+const formatEstado = (estado: string) => {
+  if (estado === "aprobado") return "Aprobado";
+  if (estado === "rechazado") return "Rechazado";
+  if (estado === "cancelada" || estado === "cancelado") return "Cancelada";
+  return "Actualizada";
+};
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
